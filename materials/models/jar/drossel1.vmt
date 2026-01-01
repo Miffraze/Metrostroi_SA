@@ -1,0 +1,14 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "models/jar/drossel1"
+	"$model" "1"
+
+    "$phong" "1"
+ 
+    "$bumpmap"       "models/jar/drossel1_bump"
+    "$phongboost"                1
+    "$phongfresnelranges"        "[.5 .5 .5]"
+    $normalmapalphaenvmapmask 1
+    $envmaptint "[1 1 1]"
+}
+}

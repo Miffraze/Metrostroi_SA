@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "models/metrostroi/re_sign/013/re_sign_a"
+	"$bumpmap" "models/metrostroi/re_sign/013/re_sign_a_norm"
+}

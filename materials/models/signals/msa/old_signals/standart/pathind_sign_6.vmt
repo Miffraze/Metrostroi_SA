@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "models/signals/msa/old_signals/standart/pathind_sign_6"
+	"$selfillum" 1
+}

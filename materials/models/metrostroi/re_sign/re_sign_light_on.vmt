@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "models/metrostroi/re_sign/re_sign_light_on"
+	"$selfillum" 1
+}
