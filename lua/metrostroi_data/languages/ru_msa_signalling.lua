@@ -63,3 +63,26 @@ UPPS_Roll = "Поворот:"
 --Other
 Select_Signals = "Выберите светофор"
 Select_Signs = "Выберите знак"
+
+--Other
+X_Off = "Смещение по X:"
+Y_Off = "Смещение по Y:"
+Z_Off = "Смещение по Z:"
+X_Inv = "X Инвертированный"
+Y_Inv = "Y Инвертированный:"
+Z_Inv = "Z Инвертированный:"
+
+--Signs
+Left_Signs = "Слева (если возможно)"
+Left_Signs_Des = "Знак с левой стороны"
+
+--Autostops
+Siglnal_Link_AS = "Светофор:"
+Siglnal_Link_AS_Des = "Название светофора, к которому будет привязан автостоп"
+MaxSpeed = "Макс. скорость:"
+
+--KGU
+KGU_Signal_Link = "Светофор:"
+KGU_Signal_Link_Des = "Светофор, который будет подавать АО и \nвключать КГУ при срабатывании"
+KGU_Lenses_Link = "Линзы:"
+KGU_Lenses_Link_Des = "Линзы, которые будут включаться при срабатывании КГУ"

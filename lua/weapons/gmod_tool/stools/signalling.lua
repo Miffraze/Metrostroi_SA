@@ -778,14 +778,7 @@ function TOOL:BuildCPanelCustom()
 					tool:SendSettings()
 				end
 		end
-		local VBigLC = CPanel:CheckBox(Big_Letter)
-			VBigLC:SetTooltip(Big_Letter_Des)
-			VBigLC:SetValue(tool.Signal.BigLetter or false)
-			function VBigLC:OnChange()
-				tool.Signal.BigLetter = self:GetChecked()
-				tool:SendSettings()
-				tool:BuildCPanelCustom()
-			end
+		
 		local VLeftC = CPanel:CheckBox(Left)
 			VLeftC:SetTooltip(Left_Des)
 			VLeftC:SetValue(tool.Signal.Left or false)
@@ -824,18 +817,9 @@ function TOOL:BuildCPanelCustom()
 					tool:SendSettings()
 					tool:BuildCPanelCustom()
 				end
-			local VStationTrackC = CPanel:CheckBox(RC_ST_Number)
-				VStationTrackC:SetTooltip(RC_ST_Number_Des)
-				VStationTrackC:SetValue(tool.Signal.StationTrack or false)
-				function VStationTrackC:OnChange()
-					tool.Signal.StationTrack = self:GetChecked()
-					tool:SendSettings()
-					tool:BuildCPanelCustom()
-				end
 		else
-			if tool.Signal.ARSOnly or tool.Signal.StationTrack then
+			if tool.Signal.ARSOnly then
 				tool.Signal.ARSOnly = false
-				tool.Signal.StationTrack = false
 				tool:SendSettings()
 			end
 		end
@@ -890,149 +874,252 @@ function TOOL:BuildCPanelCustom()
 				tool.Signal.RouteUnused = self:GetChecked()
 				tool:SendSettings()
 			end
-		for i = 1,(tool.Signal.Routes and #tool.Signal.Routes or 0) do
-			local CollCat = vgui.Create("DForm")
-			local rou = tool.Signal.Routes[i].Manual and 2 or tool.Signal.Routes[i].Repeater and 3 or tool.Signal.Routes[i].Emer and 4 or 1
-			CollCat:SetLabel(Type_Signal_Route[rou])
-			CollCat:SetExpanded(1)
-				local VTypeOfRouteI = vgui.Create("DComboBox")
-					--VType:SetValue("Choose tool.Type")
-					VTypeOfRouteI:ChooseOption(Type_Signal_Route[rou],rou)
-					for i1 = 1,#Type_Signal_Route do
-						VTypeOfRouteI:AddChoice(Type_Signal_Route[i1])
-					end
-					VTypeOfRouteI.OnSelect = function(_, index, name)
-						VTypeOfRouteI:SetValue(name)
-						tool.Signal.Routes[i].Manual = index == 2
-						tool.Signal.Routes[i].Repeater = index == 3
-						tool.Signal.Routes[i].Emer = index == 4
-						tool:SendSettings()
-						self:BuildCPanelCustom()
-					end
-				CollCat:AddItem(VTypeOfRouteI)
-				local VRNT,VRNN = CollCat:TextEntry(Routes)
-					VRNT:SetText(tool.Signal.Routes[i].RouteName or "")
-					VRNT:SetTooltip(Routes_Des)
-					function VRNT:OnLoseFocus()
-						tool.Signal.Routes[i].RouteName = self:GetValue()
-						tool:SendSettings()
-					end
-				local VNexT,VNexN = CollCat:TextEntry(NextSig)
-					VNexT:SetText(tool.Signal.Routes[i].NextSignal or "")
-					VNexT:SetTooltip(NextSig_Des)
-					function VNexT:OnChange()
-						local oldval = self:GetValue()
-						local pos = self:GetCaretPos()
-						local NewValue = ""
-						local NewValue = oldval:gsub("[^%w%s*/]", "")
-						NewValue = NewValue:gsub("[A-Za-z]", function(c)
-							return c:match("[isIS]") and c or c:upper()
-						end)
-						self:SetText(NewValue)
-						self:SetCaretPos(pos < #NewValue and pos or #NewValue)
-					end
-					function VNexT:OnLoseFocus()
-						tool.Signal.Routes[i].NextSignal = self:GetValue()
-						tool:SendSettings()
-					end
-				if not tool.Signal.ARSOnly then
-					local VLighT,VLighN = CollCat:TextEntry(Lenses_Route)
-						VLighT:SetText(tool.Signal.Routes[i].Lights or "")
-						VLighT:SetTooltip(Lenses_Route_Des)
-						function VLighT:OnLoseFocus()
-							local cleanValue = self:GetValue():gsub("[^%d%-b]", "")
-							self:SetText(cleanValue)
-							tool.Signal.Routes[i].Lights = cleanValue
-							tool:SendSettings()
-						end
+		local AddCustom = CPanel:Button(VisualSignals)
+			local function UpdateButtonVisuals() AddCustom:SetText(VisualSignals) end
+			UpdateButtonVisuals(AddCustom, tool.Signal.Add_Custom)
+			AddCustom.DoClick = function(self)
+				tool.Signal.Add_Custom = not tool.Signal.Add_Custom
+				tool:SendSettings()
+				UpdateButtonVisuals(self, tool.Signal.Add_Custom)
+				tool:BuildCPanelCustom()
+			end
+		if tool.Signal.Add_Custom == true then
+			local VBigLC = CPanel:CheckBox(Big_Letter)
+				VBigLC:SetTooltip(Big_Letter_Des)
+				VBigLC:SetValue(tool.Signal.BigLetter or false)
+				function VBigLC:OnChange()
+					tool.Signal.BigLetter = self:GetChecked()
+					tool:SendSettings()
+					tool:BuildCPanelCustom()
 				end
-				if not tool.Signal.Routes[i].Repeater then
-					local VARST,VARSN = CollCat:TextEntry(ARSC)
-						VARST:SetText(tool.Signal.Routes[i].ARSCodes or "")
-						VARST:SetTooltip(ARSC_Des)
-						function VARST:OnLoseFocus()
-							tool.Signal.Routes[i].ARSCodes = self:GetValue()
-							tool:SendSettings()
-						end
+			local VStationTrackC = CPanel:CheckBox(RC_ST_Number)
+				VStationTrackC:SetTooltip(RC_ST_Number_Des)
+				VStationTrackC:SetValue(tool.Signal.StationTrack or false)
+				function VStationTrackC:OnChange()
+					tool.Signal.StationTrack = self:GetChecked()
+					tool:SendSettings()
+					tool:BuildCPanelCustom()
 				end
-				local VSwiT,VSwiN = CollCat:TextEntry(Switches)
-					VSwiT:SetText(tool.Signal.Routes[i].Switches or "")
-					VSwiT:SetTooltip(Switches_Des)
-					function VSwiT:OnLoseFocus()
-						tool.Signal.Routes[i].Switches = self:GetValue()
-						tool:SendSettings()
-					end
-				local VEnRouC = CollCat:CheckBox(Enable_RN)
-						VEnRouC:SetTooltip(Enable_RN_Des)
-						VEnRouC:SetValue(tool.Signal.Routes[i].EnRou or false)
-						function VEnRouC:OnChange()
-							tool.Signal.Routes[i].EnRou = self:GetChecked()
-							tool:SendSettings()
-							--tool:BuildCPanelCustom()
-						end
-				local VIndicT = CollCat:TextEntry(En_Routes)
-					VIndicT:SetText(tool.Signal.Routes[i].Ind or "")
-					VIndicT:SetTooltip(En_Routes_Des)
-					VIndicT:SetEnterAllowed(false)
-					function VIndicT:OnChange()
-						local oldval = self:GetValue()
-						local NewValue = oldval:match("[0-9DABVGEIKMNPWFLRXQZdabvgeikmnpwflrxqz]+") or ""
-						NewValue = NewValue:gsub("[A-Za-z]", function(c)
-							return c:match("[Dd]") and c or c:upper()
-						end)
-						local oldpos = self:GetCaretPos()
-						self:SetText(NewValue:sub(1,2))
-						self:SetCaretPos(math.min(2,oldpos))
-					end
-					function VIndicT:OnLoseFocus()
-						tool.Signal.Routes[i].Ind = self:GetValue()
-						tool:SendSettings()
-					end
-				local VIndicT = CollCat:TextEntry(En_Routes_SigLink)
-					VIndicT:SetText(tool.Signal.Routes[i].NSRou or "")
-					VIndicT:SetTooltip(En_Routes_SigLink_Des)
-					VIndicT:SetEnterAllowed(false)
-					function VIndicT:OnChange()
-						local oldval = self:GetValue()
-						local NewValue = ""
-						local NewValue = oldval:gsub("[^%w%s/]", "")
-						NewValue = NewValue:gsub("[A-Za-z]", function(c)
-							return c:match("[isIS]") and c or c:upper()
-						end)
-						self:SetText(NewValue)
-						self:SetCaretPos(#NewValue)
-					end
-					function VIndicT:OnLoseFocus()
-						tool.Signal.Routes[i].NSRou = self:GetValue()
-						tool:SendSettings()
-					end
-			local VRemoveR = CollCat:Button(Remove_Route)
-			VRemoveR.DoClick = function()
-				table.remove(tool.Signal.Routes,i)
+		end
+
+		self.RouteListHeight = self.RouteListHeight or 75
+		local RouteList
+		local HeightChoice = vgui.Create("DComboBox")
+		HeightChoice:SetValue(High_Table .. self.RouteListHeight)
+		HeightChoice:AddChoice(High_Table.."075", 75)
+		HeightChoice:AddChoice(High_Table.."100", 100)
+		HeightChoice:AddChoice(High_Table.."150", 150)
+		HeightChoice:AddChoice(High_Table.."250", 250)
+
+		HeightChoice.OnSelect = function(_, index, name, data)
+			self.RouteListHeight = data
+			if ValidPanel(RouteList) then
+				RouteList:SetTall(data)
+				CPanel:InvalidateLayout(true)
+				CPanel:GetParent():InvalidateLayout(true) 
+			end
+		end
+		CPanel:AddItem(HeightChoice)
+		self.SelectedRoute = self.SelectedRoute or 1
+		RouteList = vgui.Create("DListView")
+		RouteList:SetTall(self.RouteListHeight)
+		RouteList:SetMultiSelect(false)
+		RouteList:AddColumn("№"):SetFixedWidth(25)
+		RouteList:AddColumn(Routes_Table)
+		RouteList:AddColumn(Types_Table)
+		local function FillRouteList()
+			RouteList:Clear()
+			if not tool.Signal.Routes then return end
+			for k, v in ipairs(tool.Signal.Routes) do
+				local typeName = Type_Signal_Route[v.Manual and 2 or v.Repeater and 3 or v.Emer and 4 or 1]
+				RouteList:AddLine(k, v.RouteName or "---", typeName)
+			end
+			if tool.Signal.Routes[self.SelectedRoute] then
+				local line = RouteList:GetLine(self.SelectedRoute)
+				if line then RouteList:SelectItem(line) end
+			end
+		end
+		FillRouteList()
+		RouteList.OnRowSelected = function(_, index)
+			if self.SelectedRoute == index then return end
+			self.SelectedRoute = index
+			self:BuildCPanelCustom()
+		end
+		CPanel:AddItem(RouteList)
+
+		local ControlBtnPnl = vgui.Create("DPanel")
+		ControlBtnPnl:SetTall(25)
+		local btnUp = vgui.Create("DButton", ControlBtnPnl)
+			btnUp:SetText("▲")
+			btnUp:Dock(LEFT)
+			btnUp:SetWide(40)
+			btnUp.DoClick = function()
+				local idx = self.SelectedRoute
+				if idx > 1 then
+					local row = table.remove(tool.Signal.Routes, idx)
+					table.insert(tool.Signal.Routes, idx - 1, row)
+					self.SelectedRoute = idx - 1
+					tool:SendSettings()
+					self:BuildCPanelCustom()
+				end
+			end
+		local btnDown = vgui.Create("DButton", ControlBtnPnl)
+			btnDown:SetText("▼")
+			btnDown:Dock(LEFT)
+			btnDown:SetWide(40)
+			btnDown.DoClick = function()
+				local idx = self.SelectedRoute
+				if idx < #tool.Signal.Routes then
+					local row = table.remove(tool.Signal.Routes, idx)
+					table.insert(tool.Signal.Routes, idx + 1, row)
+					self.SelectedRoute = idx + 1
+					tool:SendSettings()
+					self:BuildCPanelCustom()
+				end
+			end
+		local btnAdd = vgui.Create("DButton", ControlBtnPnl)
+			btnAdd:SetText(Add_Route)
+			btnAdd:Dock(LEFT)
+			btnAdd:DockMargin(5, 0, 0, 0)
+			btnAdd:SetWide(75)
+			btnAdd:SetTextColor(Color(0, 120, 0))
+			btnAdd.DoClick = function()
+				if not tool.Signal.Routes then tool.Signal.Routes = {} end
+				local insertAt = self.SelectedRoute + 1
+				table.insert(tool.Signal.Routes, insertAt, {
+					Manual = tool.RouteType == 2,
+					Repeater = tool.RouteType == 3,
+					Emer = tool.RouteType == 4,
+				})
+				self.SelectedRoute = insertAt
 				tool:SendSettings()
 				self:BuildCPanelCustom()
 			end
+		local btnDel = vgui.Create("DButton", ControlBtnPnl)
+			btnDel:SetText(Remove_Route)
+			btnDel:Dock(RIGHT)
+			btnDel:SetWide(75)
+			btnDel:SetTextColor(Color(200, 0, 0))
+			btnDel.DoClick = function()
+				if tool.Signal.Routes[self.SelectedRoute] then
+					table.remove(tool.Signal.Routes, self.SelectedRoute)
+					self.SelectedRoute = math.max(1, self.SelectedRoute - 1)
+					tool:SendSettings()
+					self:BuildCPanelCustom()
+				end
+			end
+		CPanel:AddItem(ControlBtnPnl)
+		local i = self.SelectedRoute
+		if tool.Signal.Routes and tool.Signal.Routes[i] then
+			local routeData = tool.Signal.Routes[i]
+			local CollCat = vgui.Create("DForm")
+			local rou = routeData.Manual and 2 or routeData.Repeater and 3 or routeData.Emer and 4 or 1
+			CollCat:SetLabel((Type_Signal_Route[rou]) .. " #" .. i)
+			CollCat:SetExpanded(true)
+			local VTypeOfRouteI = vgui.Create("DComboBox")
+			VTypeOfRouteI:ChooseOption(Type_Signal_Route[rou], rou)
+			for i1 = 1, #Type_Signal_Route do
+				VTypeOfRouteI:AddChoice(Type_Signal_Route[i1])
+			end
+			VTypeOfRouteI.OnSelect = function(_, index, name)
+				routeData.Manual = index == 2
+				routeData.Repeater = index == 3
+				routeData.Emer = index == 4
+				tool:SendSettings()
+				self:BuildCPanelCustom()
+			end
+			CollCat:AddItem(VTypeOfRouteI)
+			local VRNT, VRNN = CollCat:TextEntry(Routes)
+			VRNT:SetText(routeData.RouteName or "")
+			function VRNT:OnLoseFocus()
+				routeData.RouteName = self:GetValue()
+				tool:SendSettings()
+				FillRouteList()
+			end
+			local VNexT, VNexN = CollCat:TextEntry(NextSig)
+			VNexT:SetText(routeData.NextSignal or "")
+			function VNexT:OnChange()
+				local oldval = self:GetValue()
+				local pos = self:GetCaretPos()
+				local NewValue = oldval:gsub("[^%w%s*/]", ""):gsub("[A-Za-z]", function(c)
+					return c:match("[isIS]") and c or c:upper()
+				end)
+				self:SetText(NewValue)
+				self:SetCaretPos(math.min(pos, #NewValue))
+			end
+			function VNexT:OnLoseFocus()
+				routeData.NextSignal = self:GetValue()
+				tool:SendSettings()
+			end
+			if not tool.Signal.ARSOnly then
+				local VLighT, VLighN = CollCat:TextEntry(Lenses_Route)
+				VLighT:SetText(routeData.Lights or "")
+				function VLighT:OnLoseFocus()
+					local cleanValue = self:GetValue():gsub("[^%d%-b]", "")
+					self:SetText(cleanValue)
+					routeData.Lights = cleanValue
+					tool:SendSettings()
+				end
+			end
+			if not routeData.Repeater then
+				local VARST, VARSN = CollCat:TextEntry(ARSC)
+				VARST:SetText(routeData.ARSCodes or "")
+				function VARST:OnLoseFocus()
+					routeData.ARSCodes = self:GetValue()
+					tool:SendSettings()
+				end
+			end
+			local VSwiT, VSwiN = CollCat:TextEntry(Switches)
+			VSwiT:SetText(routeData.Switches or "")
+			function VSwiT:OnLoseFocus()
+				routeData.Switches = self:GetValue()
+				tool:SendSettings()
+			end
+			local VEnRouC = CollCat:CheckBox(Enable_RN)
+				VEnRouC:SetTooltip(Enable_RN_Des)
+				VEnRouC:SetValue(tool.Signal.Routes[i].EnRou or false)
+				function VEnRouC:OnChange()
+					tool.Signal.Routes[i].EnRou = self:GetChecked()
+					tool:SendSettings()
+					--tool:BuildCPanelCustom()
+				end
+			local VIndicT = CollCat:TextEntry(En_Routes)
+				VIndicT:SetText(tool.Signal.Routes[i].Ind or "")
+				VIndicT:SetTooltip(En_Routes_Des)
+				VIndicT:SetEnterAllowed(false)
+				function VIndicT:OnChange()
+					local oldval = self:GetValue()
+					local NewValue = oldval:match("[0-9DABVGEIKMNPWFLRXQZdabvgeikmnpwflrxqz]+") or ""
+					NewValue = NewValue:gsub("[A-Za-z]", function(c)
+						return c:match("[Dd]") and c or c:upper()
+					end)
+					local oldpos = self:GetCaretPos()
+					self:SetText(NewValue:sub(1,2))
+					self:SetCaretPos(math.min(2,oldpos))
+				end
+				function VIndicT:OnLoseFocus()
+					tool.Signal.Routes[i].Ind = self:GetValue()
+					tool:SendSettings()
+				end
+			local VIndicT = CollCat:TextEntry(En_Routes_SigLink)
+				VIndicT:SetText(tool.Signal.Routes[i].NSRou or "")
+				VIndicT:SetTooltip(En_Routes_SigLink_Des)
+				VIndicT:SetEnterAllowed(false)
+				function VIndicT:OnChange()
+					local oldval = self:GetValue()
+					local NewValue = ""
+					local NewValue = oldval:gsub("[^%w%s/]", "")
+					NewValue = NewValue:gsub("[A-Za-z]", function(c)
+						return c:match("[isIS]") and c or c:upper()
+					end)
+					self:SetText(NewValue)
+					self:SetCaretPos(#NewValue)
+				end
+				function VIndicT:OnLoseFocus()
+					tool.Signal.Routes[i].NSRou = self:GetValue()
+					tool:SendSettings()
+				end
 			CPanel:AddItem(CollCat)
-		end
-		CPanel:AddItem(VAddPanel)
-		local VTypeOfRoute = vgui.Create("DComboBox")
-			--VType:SetValue("Choose tool.Type")
-			VTypeOfRoute:ChooseOption(Type_Signal_Route[tool.RouteType],tool.RouteType)
-			VTypeOfRoute:SetColor(color_black)
-			for i = 1,#Type_Signal_Route do
-				VTypeOfRoute:AddChoice(Type_Signal_Route[i])
-			end
-			VTypeOfRoute.OnSelect = function(_, index, name)
-				VTypeOfRoute:SetValue(name)
-				tool.RouteType = index
-			end
-		CPanel:AddItem(VTypeOfRoute)
-		local VAddR = CPanel:Button(Add_Route)
-		VAddR.DoClick = function()
-			if not tool.Signal.Routes then tool.Signal.Routes = {} end
-			table.insert(tool.Signal.Routes,{Manual = tool.RouteType==2, Repeater = tool.RouteType == 3, Emer = tool.RouteType == 4, RouteName = ""})
-			tool:SendSettings()
-			self:BuildCPanelCustom()
 		end
 	elseif tool.Type == 2 then
         local currentSignID = (tool.Sign.Type or 1) - 1

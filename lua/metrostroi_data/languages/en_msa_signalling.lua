@@ -63,3 +63,26 @@ UPPS_Roll = "Roll:"
 --Other
 Select_Signals = "Select signal"
 Select_Signs = "Select sign"
+
+--Other
+X_Off = "X Offset:"
+Y_Off = "Y Offset:"
+Z_Off = "Z Offset:"
+X_Inv = "X Invert"
+Y_Inv = "Y Invert:"
+Z_Inv = "Z Invert:"
+
+--Signs
+Left_Signs = 		"Left Side (if possible)"
+Left_Signs_Des = 	"The sign will be placed on the left side"
+
+--Autostops
+AS_Siglnal_Link = 		"Signal:"
+AS_Siglnal_Link_Des = 	"Signal name to which the autostop will be linked"
+AS_MaxSpeed = 			"Max Speed:"
+
+--KGU
+KGU_Signal_Link = "Signal:"
+KGU_Signal_Link_Des = "Signal name to which the KGU ill be linked"
+KGU_Lenses_Link = "Lenses:"
+KGU_Lenses_Link_Des = "Lenses that will turn on when triggered KGU"

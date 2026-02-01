@@ -39,6 +39,15 @@ POS = 					"POS"
 POS_Des = 				"Pass Occupation Signal. Do not check TC occupation"
 Route_Unused =			"Service"
 Route_Unused_Des =		"Do not touch. Service parameter"
+
+VisualSignals =			"Visual"
+
+Remove_Route = 			"Remove"
+Add_Route = 			"Add"
+Routes_Table = 			"Route"
+Types_Table = 			"Type"
+High_Table =			"List height: "
+
 Routes = 				"Route:"
 Routes_Des = 			"Route name.\nUsed for !sopen or !sclose"
 NextSig = 				"Next Signal:"
@@ -57,28 +66,3 @@ En_Routes_SigLink =     "Signal RI Link"
 En_Routes_SigLink_Des = "Signal that is sending the Route Indicator aspect information"
 Enable_RV =             "Hide"
 Enable_RV_Des =         "Hides the route command"
-Remove_Route = 			"Remove Route"
-Add_Route = 			"Add Route"
-
---Other
-X_Off = "X Offset:"
-Y_Off = "Y Offset:"
-Z_Off = "Z Offset:"
-X_Inv = "X Invert"
-Y_Inv = "Y Invert:"
-Z_Inv = "Z Invert:"
-
---Signs
-Left_Signs = 		"Left Side (if possible)"
-Left_Signs_Des = 	"The sign will be placed on the left side"
-
---Autostops
-AS_Siglnal_Link = 		"Signal:"
-AS_Siglnal_Link_Des = 	"Signal name to which the autostop will be linked"
-AS_MaxSpeed = 			"Max Speed:"
-
---KGU
-KGU_Signal_Link = "Signal:"
-KGU_Signal_Link_Des = "Signal name to which the KGU ill be linked"
-KGU_Lenses_Link = "Lenses:"
-KGU_Lenses_Link_Des = "Lenses that will turn on when triggered KGU"

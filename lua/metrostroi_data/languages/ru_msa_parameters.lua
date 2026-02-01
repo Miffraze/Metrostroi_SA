@@ -39,6 +39,15 @@ POS = 					"POS"
 POS_Des = 				"Pass Occupation Signal. НЕ учитывать занятость РЦ"
 Route_Unused =			"Служебное"
 Route_Unused_Des =		"Не трогать. Служебный параметр"
+
+VisualSignals =			"Внешность"
+
+Remove_Route = 			"Удалить"
+Add_Route = 			"Добавить"
+Routes_Table = 			"Маршрут"
+Types_Table = 			"Тип"
+High_Table =			"Высота списка: "
+
 Routes = 				"Маршрут:"
 Routes_Des = 			"Название маршрута.\nДля команд !sopen или !sclose"
 NextSig = 				"След. светофор:"
@@ -57,28 +66,3 @@ En_Routes_SigLink = 	"Контр. сигнал"
 En_Routes_SigLink_Des = "Сигнал, при свободности ограждаемого участка которого\nберётся ЕГО показание МУ"
 Enable_RV =             "Скрыть"
 Enable_RV_Des =         "Скрывает команду маршрута"
-Remove_Route = 			"Удалить маршрут"
-Add_Route = 			"Добавить маршрут"
-
---Other
-X_Off = "Смещение по X:"
-Y_Off = "Смещение по Y:"
-Z_Off = "Смещение по Z:"
-X_Inv = "X Инвертированный"
-Y_Inv = "Y Инвертированный:"
-Z_Inv = "Z Инвертированный:"
-
---Signs
-Left_Signs = "Слева (если возможно)"
-Left_Signs_Des = "Знак с левой стороны"
-
---Autostops
-Siglnal_Link_AS = "Светофор:"
-Siglnal_Link_AS_Des = "Название светофора, к которому будет привязан автостоп"
-MaxSpeed = "Макс. скорость:"
-
---KGU
-KGU_Signal_Link = "Светофор:"
-KGU_Signal_Link_Des = "Светофор, который будет подавать АО и \nвключать КГУ при срабатывании"
-KGU_Lenses_Link = "Линзы:"
-KGU_Lenses_Link_Des = "Линзы, которые будут включаться при срабатывании КГУ"
