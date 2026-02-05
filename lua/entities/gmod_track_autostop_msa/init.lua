@@ -36,6 +36,7 @@ function ENT:Initialize()
 end
 
 function ENT:Think()
+    self:SetNW2Bool("Autostop", IsValid(self.Sig) and self.Sig.Red or false)
     self:NextThink(CurTime() + 2)
     return true
 end
