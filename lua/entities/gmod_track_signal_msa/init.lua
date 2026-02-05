@@ -292,11 +292,16 @@ function ENT:PostInitalize()
 	if not self.RouteNumberSetup or not self.RouteNumberSetup:find("W") then
 		self.GoodInvationSignal = 0
 		local index = 1
-		for k,v in ipairs(self.Lenses) do
-			if v ~= "M" then
-				for i = 1,#v do
-					if v[i] == "W" then self.GoodInvationSignal = index end
-					index = index + 1
+		for k, v in ipairs(self.Lenses) do
+			if v != "M" then
+				for i = 1, #v do
+					local char = v:sub(i, i)
+					if char != "X" then
+						if char == "W" then 
+							self.GoodInvationSignal = index 
+						end
+						index = index + 1
+					end
 				end
 			end
 		end
@@ -595,7 +600,7 @@ function ENT:Think(my)
 				local NextRoutOverR = self.NextSignalLink.RouteNumberOverriteRaw
 				local NuRouFromNext = (NextRoutOverR and NextRoutOverR ~= "" and NextRoutOverR ~= "-1")
 									and NextRoutOverR or self.NextSignalLink.RouteNumber
-				if (MU_permission) and VersionSignal <= 1.87 then
+				if MU_permission and (not VersionSignal or VersionSignal < 1.9) then
 					local isNextEmpty = (NuRouFromNext == nil or NuRouFromNext == "" or NuRouFromNext == "-1")
 					if self.NextSignalLink.Red or isNextEmpty then
 						self.RouteNumberOverriteRaw = IndValue
@@ -671,9 +676,10 @@ function ENT:Think(my)
 					--Get the LightID and check, is this light must light up
 					local LightID = IsValid(self.NextSignalLink) and math.min(#Route.LightsExploded,self.FreeBS+1) or 1
 					local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or ((v[i] == "W" and self.InvationSignal and self.GoodInvationSignal == index) and 1 or 0)
-					local MustBlink = (v[i] == "W" and self.InvationSignal and self.GoodInvationSignal == index) or (AverageState > 0 and Route.LightsExploded[LightID][AverageState+1] == "b") --Blinking, when next is "b" (or it's invasion signal')
+					local MustBlink = 
+					(v[i] == "W" and self.InvationSignal and self.GoodInvationSignal == index) or 
+					(AverageState > 0 and Route.LightsExploded[LightID][AverageState+1] == "b") --Blinking, when next is "b" (or it's invasion signal')
 					self.Sig = self.Sig..(AverageState > 0 and (MustBlink and 2 or 1) or 0)
-
 					if AverageState > 0 then
 						if self.GoodInvationSignal ~= index then self.Colors = self.Colors..(MustBlink and v[i]:lower() or v[i]:upper()) end
 						if v[i] == "R" then
@@ -682,6 +688,8 @@ function ENT:Think(my)
 						end
 					end
 					index = index + 1
+					--print(Route.LightsExploded[LightID])
+					--print(self.Name, self.InvationSignal, self.GoodInvationSignal, MustBlink,LightID,AverageState)
 				end
 			end
 		end

@@ -1029,97 +1029,187 @@ function TOOL:BuildCPanelCustom()
 				self:BuildCPanelCustom()
 			end
 			CollCat:AddItem(VTypeOfRouteI)
+			--Маршрут
 			local VRNT, VRNN = CollCat:TextEntry(Routes)
-			VRNT:SetText(routeData.RouteName or "")
-			function VRNT:OnLoseFocus()
-				routeData.RouteName = self:GetValue()
-				tool:SendSettings()
-				FillRouteList()
-			end
+				VRNT:SetUpdateOnType(true)
+				VRNT:SetText(routeData.RouteName or "")
+				VRNT.OnValueChange = function(s, val)
+					routeData.RouteName = val
+					FillRouteList()
+					tool:SendSettings()
+				end
+			--Следующий светофор
 			local VNexT, VNexN = CollCat:TextEntry(NextSig)
-			VNexT:SetText(routeData.NextSignal or "")
-			function VNexT:OnChange()
-				local oldval = self:GetValue()
-				local pos = self:GetCaretPos()
-				local NewValue = oldval:gsub("[^%w%s*/]", ""):gsub("[A-Za-z]", function(c)
-					return c:match("[isIS]") and c or c:upper()
-				end)
-				self:SetText(NewValue)
-				self:SetCaretPos(math.min(pos, #NewValue))
-			end
-			function VNexT:OnLoseFocus()
-				routeData.NextSignal = self:GetValue()
-				tool:SendSettings()
-			end
-			if not tool.Signal.ARSOnly then
-				local VLighT, VLighN = CollCat:TextEntry(Lenses_Route)
-				VLighT:SetText(routeData.Lights or "")
-				function VLighT:OnLoseFocus()
-					local cleanValue = self:GetValue():gsub("[^%d%-b]", "")
-					self:SetText(cleanValue)
-					routeData.Lights = cleanValue
-					tool:SendSettings()
-				end
-			end
-			if not routeData.Repeater then
-				local VARST, VARSN = CollCat:TextEntry(ARSC)
-				VARST:SetText(routeData.ARSCodes or "")
-				function VARST:OnLoseFocus()
-					routeData.ARSCodes = self:GetValue()
-					tool:SendSettings()
-				end
-			end
-			local VSwiT, VSwiN = CollCat:TextEntry(Switches)
-			VSwiT:SetText(routeData.Switches or "")
-			function VSwiT:OnLoseFocus()
-				routeData.Switches = self:GetValue()
-				tool:SendSettings()
-			end
-			local VEnRouC = CollCat:CheckBox(Enable_RN)
-				VEnRouC:SetTooltip(Enable_RN_Des)
-				VEnRouC:SetValue(tool.Signal.Routes[i].EnRou or false)
-				function VEnRouC:OnChange()
-					tool.Signal.Routes[i].EnRou = self:GetChecked()
-					tool:SendSettings()
-					--tool:BuildCPanelCustom()
-				end
-			local VIndicT = CollCat:TextEntry(En_Routes)
-				VIndicT:SetText(tool.Signal.Routes[i].Ind or "")
-				VIndicT:SetTooltip(En_Routes_Des)
-				VIndicT:SetEnterAllowed(false)
-				function VIndicT:OnChange()
-					local oldval = self:GetValue()
-					local NewValue = oldval:match("[0-9DABVGEIKMNPWFLRXQZdabvgeikmnpwflrxqz]+") or ""
-					NewValue = NewValue:gsub("[A-Za-z]", function(c)
-						return c:match("[Dd]") and c or c:upper()
-					end)
-					local oldpos = self:GetCaretPos()
-					self:SetText(NewValue:sub(1,2))
-					self:SetCaretPos(math.min(2,oldpos))
-				end
-				function VIndicT:OnLoseFocus()
-					tool.Signal.Routes[i].Ind = self:GetValue()
-					tool:SendSettings()
-				end
-			local VIndicT = CollCat:TextEntry(En_Routes_SigLink)
-				VIndicT:SetText(tool.Signal.Routes[i].NSRou or "")
-				VIndicT:SetTooltip(En_Routes_SigLink_Des)
-				VIndicT:SetEnterAllowed(false)
-				function VIndicT:OnChange()
-					local oldval = self:GetValue()
-					local NewValue = ""
-					local NewValue = oldval:gsub("[^%w%s/]", "")
-					NewValue = NewValue:gsub("[A-Za-z]", function(c)
+				VNexT:SetUpdateOnType(true)
+				VNexT:SetText(routeData.NextSignal or "")
+				VNexT.OnValueChange = function(s, val)
+					local pos = s:GetCaretPos()
+					local NewValue = val:gsub("[^%w%s*/]", ""):gsub("[A-Za-z]", function(c)
 						return c:match("[isIS]") and c or c:upper()
 					end)
-					self:SetText(NewValue)
-					self:SetCaretPos(#NewValue)
+					routeData.NextSignal = NewValue
+					if val != NewValue then
+						s:SetText(NewValue)
+						s:SetCaretPos(math.min(pos, #NewValue))
+					end
+					tool:SendSettings()
 				end
-				function VIndicT:OnLoseFocus()
-					tool.Signal.Routes[i].NSRou = self:GetValue()
+			--Линзы
+			if not tool.Signal.ARSOnly then
+				local VLighT, VLighN = CollCat:TextEntry(Lenses_Route)
+					VLighT:SetUpdateOnType(true)
+					VLighT:SetText(routeData.Lights or "")
+					VLighT.OnValueChange = function(s, val)
+						local NewValue = val:gsub("[^%d%-b]", "")
+						routeData.Lights = NewValue
+						if val != NewValue then s:SetText(NewValue) end
+						tool:SendSettings()
+					end
+			end
+			--АРС
+			if not routeData.Repeater then
+				local VARST, VARSN = CollCat:TextEntry(ARSC)
+					VARST:SetUpdateOnType(true)
+					VARST:SetText(routeData.ARSCodes or "")
+					VARST.OnValueChange = function(s, val)
+						routeData.ARSCodes = val
+						tool:SendSettings()
+					end
+			end
+			--Стрелки
+			local VSwiT, VSwiN = CollCat:TextEntry(Switches)
+				VSwiT:SetUpdateOnType(true)
+				VSwiT:SetText(routeData.Switches or "")
+				VSwiT.OnValueChange = function(s, val)
+					routeData.Switches = val
+					tool:SendSettings()
+				end
+			--Включение МУ
+			local VEnRouC = CollCat:CheckBox(Enable_RN)
+				VEnRouC:SetTooltip(Enable_RN_Des)
+				VEnRouC:SetValue(routeData.EnRou or false)
+				VEnRouC.OnChange = function(s, val)
+					routeData.EnRou = val
+					tool:SendSettings()
+				end 
+			--Буква для МУ
+			local VIndicT = CollCat:TextEntry(En_Routes)
+				VIndicT:SetUpdateOnType(true)
+				VIndicT:SetText(routeData.Ind or "")
+				VIndicT.OnValueChange = function(s, val)
+					local pos = s:GetCaretPos()
+					local NewValue = val:match("[0-9DABVGEIKMNPWFLRXQZdabvgeikmnpwflrxqz]+") or ""
+					NewValue = NewValue:gsub("[A-Za-z]", function(c)
+						return c:match("[Dd]") and c or c:upper()
+					end):sub(1, 2)
+					routeData.Ind = NewValue
+					if val != NewValue then
+						s:SetText(NewValue)
+						s:SetCaretPos(math.min(2, pos))
+					end
+					tool:SendSettings()
+				end
+			--Контрольный сигнал
+			local VSigLink = CollCat:TextEntry(En_Routes_SigLink)
+				VSigLink:SetUpdateOnType(true)
+				VSigLink:SetText(routeData.NSRou or "")
+				VSigLink:SetTooltip(En_Routes_SigLink_Des)
+				VSigLink.OnValueChange = function(s, val)
+					local pos = s:GetCaretPos()
+					local NewValue = val:gsub("[^%w%s/]", ""):gsub("[A-Za-z]", function(c)
+						return c:match("[isIS]") and c or c:upper()
+					end)
+					routeData.NSRou = NewValue
+					if val != NewValue then
+						s:SetText(NewValue)
+						s:SetCaretPos(pos)
+					end
 					tool:SendSettings()
 				end
 			CPanel:AddItem(CollCat)
+		end
+	elseif tool.Type == 2 then
+        local currentSignID = (tool.Sign.Type or 1) - 1
+		local function FindSignInfo(targetID)
+			for catID, subTable in pairs(Type_Signs_Choice) do
+				for _, signData in ipairs(subTable) do
+					if signData[2] == targetID then
+						return catID, signData[1]
+					end
+				end
+			end
+			return nil, nil
+		end
+		local foundCatID, foundSignName = FindSignInfo(currentSignID)
+		local VCatType = vgui.Create("DComboBox")
+		local catName = Type_Signs[foundCatID] or Type_Signs[0]
+		VCatType:SetValue(catName) 
+		for i = 1, #Type_Signs do
+			VCatType:AddChoice(Type_Signs[i], i)
+		end
+		CPanel:AddItem(VCatType)
+		local VSType = vgui.Create("DComboBox")
+		VSType:SetColor(color_black)
+		CPanel:AddItem(VSType)
+		local VYOffT = CPanel:NumSlider(Y_Off, nil, -100, 100, 0)
+		VYOffT:SetValue(tool.Sign.YOffset or 0)
+		VYOffT:SetVisible(false)
+		VYOffT.OnValueChanged = function(num)
+			tool.Sign.YOffset = VYOffT:GetValue()
+			tool:SendSettings()
+		end
+		local VZOffT = CPanel:NumSlider(Z_Off, nil, -50, 50, 0)
+		VZOffT:SetValue(tool.Sign.ZOffset or 0)
+		VZOffT:SetVisible(false)
+		VZOffT.OnValueChanged = function(num)
+			tool.Sign.ZOffset = VZOffT:GetValue()
+			tool:SendSettings()
+		end
+
+		local VLeftOC = CPanel:CheckBox(Left_Signs)
+		VLeftOC:SetTooltip(Left_Signs_Des)
+		VLeftOC:SetValue(tool.Sign.Left or false)
+		VLeftOC:SetVisible(false)
+		function VLeftOC:OnChange()
+			tool.Sign.Left = self:GetChecked()
+			tool:SendSettings()
+		end
+		local function FillSignChoices(catID, selectedSignID)
+			VSType:Clear()
+			VSType:SetValue(Select_Signs)
+			local subTable = Type_Signs_Choice[catID]
+			if subTable then
+				for i = 1, #subTable do
+					VSType:AddChoice(subTable[i][1], subTable[i][2])
+				end
+			end
+			if selectedSignID then
+				for i = 1, #subTable do
+					if subTable[i][2] == selectedSignID then
+						VSType:SetValue(subTable[i][1])
+						VYOffT:SetVisible(true)
+						VZOffT:SetVisible(true)
+						VLeftOC:SetVisible(true)
+						break
+					end
+				end
+			end
+		end
+		if foundCatID then
+			FillSignChoices(foundCatID, currentSignID)
+		end
+		VCatType.OnSelect = function(_, index, name, data)
+			VYOffT:SetVisible(false)
+			VZOffT:SetVisible(false)
+			VLeftOC:SetVisible(false)
+			FillSignChoices(data, nil)
+		end
+		VSType.OnSelect = function(_, index, name, realID)
+			tool.Sign.Type = realID + 1
+			tool:SendSettings()
+			VYOffT:SetVisible(true)
+			VZOffT:SetVisible(true)
+			VLeftOC:SetVisible(true)
 		end
 	elseif tool.Type == 2 then
         local currentSignID = (tool.Sign.Type or 1) - 1
