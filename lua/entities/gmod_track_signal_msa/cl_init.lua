@@ -111,7 +111,7 @@ function ENT:SpawnHead(ID,head,pos,ang,isLeft,isLast,lenses)
     local longKron = #self.RouteNumbers > 0 and (#self.RouteNumbers ~= 1 or not self.RouteNumbers.sep)
     local function GlassConventer(data, heads)
         for i = 1, #heads do
-            if heads[i] == 'X' then
+            if heads[i] == "X" then
                 data[3].glass[i] = TLM.X_glasses[head][i]
             end
         end
@@ -429,9 +429,9 @@ function ENT:CreateModels()
                 data = TLM[v]
                 head = v
             end
-            if assembled and v[#v] == 'X' then 
-                data = TLM['X']
-                head = 'X'
+            if assembled and v[#v] == "X" then 
+                data = TLM["X"]
+                head = "X"
             end
             if assembled and v[#v] == 'M' then 
                 data = TLM['M']
@@ -462,7 +462,7 @@ function ENT:CreateModels()
                     local lenOff = data[3][i-1]
                     local head = 'single'
                     if v[i] == 'M' then head = 'M_single'  end
-                    if v[i] == 'X' then head = 'X'  end
+                    if v[i] == "X" then head = "X"  end
                     if assembled then lenOff = TLM['single'][3][0] - TLM['step'] * (i-#v) end
                     --if assembled then lenOff = Vector(0,0,100) end
                     ID2 = ID2 + 1
@@ -494,7 +494,7 @@ function ENT:CreateModels()
             offset = offset - self.NamesOffset
         end
         --local double = self.LightType ~= 1 and string.find(self.Name,"^[A-Z][A-Z]")
-        local double = self.LightType != 1 and string.find(self.Name,"^[%a%p][%a%p]")
+        local double = self.LightType != 1 and self.LightType != 2 and string.find(self.Name,"^[%a%p][%a%p]")
         local min = 0
         for i = double and 2 or 0,#self.Name-1 do
             local id = (double and i-1 or i) - min
@@ -520,7 +520,9 @@ function ENT:CreateModels()
             if double and i == 2 then offset = offset + TLM.DoubleOffset end
             if self.Name[i+1] == " " then continue end
             if self.Name[i+1] == "/" then min = min + 1; continue end
-            if self.BigLetter then
+            if self.BigLetter and self.LightType == 2 then
+                self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
+            elseif self.BigLetter then
                 self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z+7.9),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
             else
                 self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
@@ -532,10 +534,12 @@ function ENT:CreateModels()
             local id = (double and i-1 or i) - min
             self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z),Format("s%d",math.min(3,#self.Name:match("(/+)$"))))
         end
-        numoffsetbox = TLM.boxname or Vector(0,0,0)
+        OffBoxName = TLM.boxname or Vector(0,0,0)
+        OffBoxNameStart = TLM.boxnamestart or Vector(0,0,0)
         if self.BoxName == nil then self.BoxName = "" end
         if self.BoxNameStart == nil then self.BoxNameStart = "" end
-        leftlengthoffset = Vector(#self.BoxName*4.55,0,0)
+        LeftLengOffBNE = Vector(#self.BoxName*4.55,0,0)
+        LeftLengOffBNS = Vector(9.1,0,0)
         local safe_angle = Angle(0, 0, 0)
         if angle and type(angle) == "Angle" then
             safe_angle = angle
@@ -551,9 +555,9 @@ function ENT:CreateModels()
                     end
                 else    
                     if not self.Left then
-                        pos = numoffsetbox - Vector(i * 4.55, 0, 0)
+                        pos = OffBoxName - Vector(i * 4.55, 0, 0)
                     elseif self.Left then 
-                        pos = numoffsetbox - Vector(-188.5 + i * 4.55, -1, 0) + leftlengthoffset
+                        pos = OffBoxName - Vector(-188.5 + i * 4.55, -1, 0) + LeftLengOffBNE
                     end
                 end
                 self:SpawnBoxNumbers(
@@ -566,7 +570,7 @@ function ENT:CreateModels()
             end
         end
         for i = 0, #self.BoxNameStart-1 do
-            if self.BoxNameStart[i+1] and (self.BoxNameStart[i+1] ~= " " and self.BoxNameStart[i+1] ~= "/") then
+            if self.BoxNameStart[i+1] and (self.BoxNameStart[i+1] != " " and self.BoxNameStart[i+1] != "/") then
                 local pos_start = Vector(0, 0, 0)
                 if self.LightType == 3 then
                     if self.AutostopPresent then
@@ -575,15 +579,15 @@ function ENT:CreateModels()
                 else    
                     if self.LightType ~= 5 then
                         if not self.Left then
-                            pos_start = numoffsetbox - Vector(14+i*-4.55, 69, 0)
+                            pos_start = OffBoxNameStart - Vector(14+i*-4.55,69,0)
                         else
-                            pos_start = numoffsetbox - Vector(-175.5 + i * -4.55, 69-1, 0) + leftlengthoffset
+                            pos_start = OffBoxNameStart - Vector(-175.5+i*-4.55,69-1,0) + LeftLengOffBNS
                         end
                     else
                         if not self.Left then
-                            pos_start = numoffsetbox - Vector(14+i*-4.55, 80, 0)
+                            pos_start = OffBoxNameStart - Vector(14+i*-4.55,80,0)
                         else
-                            pos_start = numoffsetbox - Vector(-170.5 + i * -4.55, 80, 0) + leftlengthoffset
+                            pos_start = OffBoxNameStart - Vector(-184.5+i*-4.55,80,0) + LeftLengOffBNS
                         end
                     end
                 end
@@ -603,20 +607,21 @@ function ENT:CreateModels()
         end
     elseif self.StationTrack then
         local k = "m1"
-        numoffsetbox = TLM.stationboxoffset or Vector(0,0,0)
+        OffBoxName = TLM.boxname or Vector(0,0,0)
+        OffBoxNameStart = TLM.boxnamestart or Vector(0,0,0)
         if self.BoxName == nil then self.BoxName = "" end
         if self.BoxNameStart == nil then self.BoxNameStart = "" end
-        leftlengthoffset = Vector(#self.BoxName*4.55,0,0)
-        stroff = Vector(#self.BoxName*2.275,0,0)
+        OffBNE = Vector(#self.BoxName*2.275,0,0)
+        OffBNS = Vector(#self.BoxNameStart*2.275,0,0)
         local base_angle_st = Angle(0, 0, -30)
         local reversed_angle_st = Angle(0, 180, -30)
         for i = 0,#self.BoxName-1 do
             if self.BoxName[i+1] == " " or self.BoxName[i+1] == "/" then continue end
             local pos
             if self.LightType == 2 or self.LightType == 3 then
-                pos = numoffsetbox - Vector(i*5.55-94.225, 20.75, 48) + stroff
+                pos = OffBoxName - Vector(i*5.55-94.225, 20.75, 48) + OffBNE
             else
-                pos = numoffsetbox - Vector(i*4.55-94.225, 24, 48) + stroff
+                pos = OffBoxName - Vector(i*4.55-94.225, 24, 48) + OffBNE
             end
             self:SpawnBoxNumbers(i,TLM.SignLetter.model,pos,(Metrostroi.LiterWarper[self.BoxName[i+1]] or self.BoxName[i+1]), base_angle_st)
         end
@@ -624,8 +629,8 @@ function ENT:CreateModels()
             if self.BoxNameStart[i+1] and (self.BoxNameStart[i+1] ~= " " and self.BoxNameStart[i+1] ~= "/") then
                 local pos_start
                 if self.LightType ~= 5 then
-                    pos_start = numoffsetbox - Vector(i*-4.55-84.225, 64, 48) + stroff
-                else pos_start = numoffsetbox - Vector(i*-4.55-84.225, 62, 48) + stroff end
+                    pos_start = OffBoxNameStart - Vector(i*-4.55-84.225, 64, 48) + OffBNS
+                else pos_start = OffBoxNameStart - Vector(i*-4.55-84.225, 62, 48) + OffBNS end
                 self:SpawnBoxNumbers(
                     i + 1000,
                     TLM.SignLetter.model,
@@ -667,7 +672,7 @@ function ENT:CreateModels()
             if self.BoxNameStart[i+1] and (self.BoxNameStart[i+1] ~= " " and self.BoxNameStart[i+1] ~= "/") then
                 local pos_start = Vector(0, 0, 0)
                 local reversed_angle_final = Angle(current_angle.p, current_angle.y + 180, current_angle.r)
-                if self.LightType ~= 5 then
+                if self.LightType != 5 then
                     pos_start = numoffsetbox - Vector(13.9+i*-4.55,69,1) 
                     if self.Left then
                         pos_start = pos_start - Vector(104*-2+i*0,-1,-0.5)
@@ -779,7 +784,7 @@ function ENT:UpdateModels(CurrentTime)
         if v~="M" then
             for i = 1,#v do
                 ID2 = ID2 + 1
-                if v[i] == 'X' then continue end
+                if v[i] == "X" then continue end
                 if v[i] ~= "M" then
                     lID2 = lID2 + 1
                 end
@@ -791,7 +796,7 @@ function ENT:UpdateModels(CurrentTime)
                     self:UpdateRoutePointer(ID..ID2, self.Num, 1)
                     continue
                 end
-                local n = tonumber(self.Sig[lID2])
+                local n = tonumber(self.Sig[ID2])
                 if n and self.Signals[lID2].RealState ~= (n > 0) then
                     self.Signals[lID2].RealState = n > 0
                     self.Signals[lID2].Stop = CurrentTime + 0.1
@@ -805,7 +810,7 @@ function ENT:UpdateModels(CurrentTime)
                 if not IsValid(self.Models[3][ID..ID2]) and State > 0 then self.Signals[lID2].State = nil end
                 local offsetAndLongOffset = offset + self.LongOffset
                 if not self.DoubleL then
-                    self:SetLight(ID,ID2,(self.BasePos[self.LightType] + offsetAndLongOffset)*(self.Left and vector_mirror or 1) + lenOff*(self.Left and vector_mirror or 1),angle_zero,self.SignalConverter[v[i]]-1,State,self.Signals[lID2].State ~= State, self.Signals[lID2].Stop)
+                    self:SetLight(ID,ID2,(self.BasePos[self.LightType] + offsetAndLongOffset)*(self.Left and vector_mirror or 1) + lenOff*(self.Left and vector_mirror or 1),angle_zero,self.SignalConverter[v[i]]-1,State,self.Signals[lID2].State ~= State)
                 else
                     self:SetLight(ID,ID2,self.BasePos[self.LightType] + offsetAndLongOffset + lenOff,angle_zero,self.SignalConverter[v[i]]-1,State,self.Signals[lID2].State ~= State)
                     self:SetLight(ID,ID2.."x",(self.BasePos[self.LightType]+offsetAndLongOffset)*vector_mirror + lenOff*vector_mirror,angle_zero,self.SignalConverter[v[i]]-1,State,self.Signals[lID2].State ~= State)
@@ -1130,13 +1135,7 @@ local function enableDebug()
                                     local ID2 = 0
                                     local first = true
                                     for _,v in ipairs(sig.LensesTBL) do
-                                        local data
-                                        if not sig.TrafficLightModels[sig.LightType][v] then
-                                            data = sig.TrafficLightModels[sig.LightType][#v-1]
-                                        else
-                                            data = sig.TrafficLightModels[sig.LightType][v]
-                                        end
-                                        if not data then continue end
+                                        if not v then continue end
                                         for i = 1, #v do
                                             ID2 = ID2 + 1
                                             if v[i] == "M" then
@@ -1144,7 +1143,8 @@ local function enableDebug()
                                                 draw.DrawText(sig.Num or "", font, 280, 160 + (ID + ID2) * 20, colorWhite)
                                             else
                                                 local n = tonumber(sig.Sig[ID2])
-                                                local State = n == 1 and "X" or (n == 2 and (RealTime() % 1.25 > 0.6)) and "B" or false
+                                                local char = v:sub(i, i)                                                
+                                                local State = n == 1 and "x" or (n == 2 and (RealTime() % 1.25 > 0.6)) and "b" or false
                                                 local textColor = cols[v[i]] or colorWhite
                                                 draw.DrawText(v[i], font, 250, 160 + (ID + ID2) * 20, textColor)
                                                 if State then

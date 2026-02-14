@@ -1384,68 +1384,48 @@ local function loadPAData(name)
     end
     Metrostroi.PARebuildStations()
 end
-
-function Metrostroi.SpawnAutostop(Pos,Angles,SignalLink,MaxSpeed,Type)
-    local ent = ents.Create("gmod_track_autostop_msa")
-    if not IsValid(ent) then return end
-    ent:SetPos(Pos)
-    ent:SetAngles(Angles)
-    ent.SignalLink = SignalLink
-    ent.MaxSpeed = MaxSpeed
-	ent.Type = Type
-    ent:Spawn()
-    return ent
-end
-
-function Metrostroi.LoadAutostops(name, keep)
+local function LoadAutostops(name, keep)
     if keep then return end
-    for k, v in pairs(ents.FindByClass("gmod_track_autostop_msa")) do
-        SafeRemoveEntity(v)
-    end
     local autostops = getFile("metrostroi_data/autostops_%s", name, "Autostops")
-    for k, v in pairs(autostops or empty_table) do
-        local pos, ang, sig, speed, etype
-        if v[1] ~= nil then 
-            pos   = v[1]
-            ang   = v[2]
-            sig   = v[3]
-            speed = v[4]
-            etype = v[5]
-        else
-            pos   = v.Pos
-            ang   = v.Angles
-            sig   = v.SignalLink
-            speed = v.MaxSpeed
-            etype = v.Type
+    if not autostops then return end
+    local autostops_ents = ents.FindByClass("gmod_track_autostop_msa")
+    for _,v in pairs(autostops_ents) do SafeRemoveEntity(v) end
+
+    for k, v in pairs(autostops) do
+        local ent = ents.Create("gmod_track_autostop_msa")
+        if IsValid(ent) then
+            ent:SetPos(v.Pos)
+            ent:SetAngles(v.Angles)
+            ent.ASSignalLink = v.SignalLink
+            ent.ASMaxSpeed = v.MaxSpeed
+            ent.ASType = v.Type
+            ent:Spawn()
         end
-        Metrostroi.SpawnAutostop(pos, ang, sig, speed, etype)
     end
 end
-function Metrostroi.SpawnKGU(pos, ang, siglink, lense, speed)
-    local ent = ents.Create("gmod_track_kgu_msa")
-    if not IsValid(ent) then return end
-    ent:SetPos(pos)
-    ent:SetAngles(ang)
-    ent.SignalLink = siglink
-    ent.Lense = lense
-
-    ent:Spawn()
-    ent:SetKGUSignalLink(siglink)
-    ent:SetKGULense(tostring(lense))
-    return ent
-end
-
-function Metrostroi.LoadKGU(name, keep_signs)
+local function LoadKGU(name, keep)
     if keep then return end
-    for k, v in pairs(ents.FindByClass("gmod_track_kgu_msa")) do
-        SafeRemoveEntity(v)
+    
+    local kgu = getFile("metrostroi_data/kgu_%s", name, "KGU")
+    if not kgu then return end
+    
+    local kgu_ents = ents.FindByClass("gmod_track_kgu_msa")
+    for _, v in pairs(kgu_ents) do 
+        SafeRemoveEntity(v) 
     end
-    local kgu_data = getFile("metrostroi_data/kgu_%s", name, "KGU Data")
-    for k, v in pairs(kgu_data or empty_table) do
-        -- v[1]=Pos, v[2]=Angles, v[3]=Link, v[4]=Lense
-        Metrostroi.SpawnKGU(v[1], v[2], v[3], v[4])
+    
+    for _, v in pairs(kgu) do
+        local ent = ents.Create("gmod_track_kgu_msa")
+        if IsValid(ent) then
+            ent:SetPos(v.Pos)
+            ent:SetAngles(v.Angles)
+            ent.KGUSignalLink = v.SignalLink
+            ent.KGULense = v.Lense
+            ent:Spawn()
+        end
     end
 end
+
 function Metrostroi.Load(name,keep_signs)
     name = name or game.GetMap()
 
@@ -1460,8 +1440,8 @@ function Metrostroi.Load(name,keep_signs)
     Metrostroi.IgnoreEntityUpdates = true
     loadSigns(name,keep_signs)
     loadAutoSigns(name,keep_signs)
-    Metrostroi.LoadAutostops(name,keep_signs)
-    Metrostroi.LoadKGU(name, keep_signs)
+    LoadAutostops(name,keep_signs)
+    LoadKGU(name, keep_signs)
 
     local pa_ents = ents.FindByClass("gmod_track_pa_marker")
     for _,v in pairs(pa_ents) do SafeRemoveEntity(v) end
@@ -1640,27 +1620,33 @@ function Metrostroi.Save(name)
         print(Format("Saved to metrostroi_data/pa_%s.txt",name))
     end
 
-	local autostops = {}
-    for k,v in pairs(ents.FindByClass("gmod_track_autostop_msa"))do
-        if not IsValid(v) then continue end
-        table.insert(autostops,{Pos = v:GetPos(), Angles = v:GetAngles(), SignalLink = v.SignalLink, MaxSpeed = v.MaxSpeed, Type = v.Type})
+    local autostops = {}
+	local autostops_ents = ents.FindByClass("gmod_track_autostop_msa")
+    for k,v in pairs(autostops_ents) do
+        table.insert(autostops,{
+            Pos = v:GetPos(),
+            Angles = v:GetAngles(),
+            SignalLink = v.ASSignalLink,
+            MaxSpeed = v.ASMaxSpeed,
+            Type = v.ASType
+        })
     end
-    local data = util.TableToJSON(autostops,true)
-    file.Write(string.format("metrostroi_data/autostops_%s.txt",name),data)
+    local asdata = util.TableToJSON(autostops,true)
+    file.Write(string.format("metrostroi_data/autostops_%s.txt",name),asdata)
     print(Format("Saved to metrostroi_data/autostops_%s.txt",name))
 
     local kgu = {}
-    for k,v in ipairs(ents.FindByClass("gmod_track_kgu_msa"))do
-        if not IsValid(v) then continue end
+    local kgu_ents = ents.FindByClass("gmod_track_kgu_msa")
+    for k,v in ipairs(kgu_ents) do
         table.insert(kgu,{
-            [1] = v:GetPos(), 
-            [2] = v:GetAngles(), 
-            [3] = v:GetKGUSignalLink(),  
-            [4] = v:GetKGULense()
+            Pos = v:GetPos(),
+            Angles = v:GetAngles(),
+            SignalLink = v.KGUSignalLink,
+            Lense = v.KGULense
         })
     end
-    local data = util.TableToJSON(kgu,true)
-    file.Write(string.format("metrostroi_data/kgu_%s.txt",name),data)
+    local kgudata = util.TableToJSON(kgu,true)
+    file.Write(string.format("metrostroi_data/kgu_%s.txt",name),kgudata)
     print(Format("Saved to metrostroi_data/kgu_%s.txt",name))
 end
 

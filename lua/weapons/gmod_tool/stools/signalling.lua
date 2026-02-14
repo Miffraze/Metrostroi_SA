@@ -9,7 +9,6 @@ TOOL.ClientConVar["autostopdata"] = ""
 TOOL.ClientConVar["kgudata"] = ""
 TOOL.ClientConVar["type"] = 1
 TOOL.ClientConVar["routetype"] = 1
-
 if SERVER then util.AddNetworkString "metrostroi-stool-signalling" end
 
 TOOL.Type = 0
@@ -137,7 +136,6 @@ function TOOL:SpawnSignal(ply,trace,param)
 		return ent
 	end
 end
-
 function TOOL:SpawnSign(ply,trace,param)
 	local pos = trace.HitPos
 
@@ -188,7 +186,6 @@ function TOOL:SpawnSign(ply,trace,param)
 		return ent
 	end
 end
-
 function TOOL:SpawnAutoPlate(ply,trace,param)
 	local pos = trace.HitPos
 
@@ -403,7 +400,104 @@ function TOOL:SpawnAutoPlate(ply,trace,param)
 		return ent
 	end
 end
+function TOOL:SpawnAutostop(ply,trace,param)
+	local pos = trace.HitPos
+	local tr = Metrostroi.RerailGetTrackData(trace.HitPos,ply:GetAimVector())
+	if not tr then return end
+	local ent
+	local found = false
+	local entlist = ents.FindInSphere(pos,64)
+	for k,v in pairs(entlist) do
+		if v:GetClass() == "gmod_track_autostop_msa" then
+			ent = v
+			found = true
+		end
+	end
+	local name = ""
+	local speed = 0
 
+	if self.Autostop.Type == 1 then
+		name = self.Autostop.SignalLink or ""
+		speed = 0
+	elseif self.Autostop.Type == 2 or self.Autostop.Type == 4 then
+		name = ""
+		speed = self.Autostop.MaxSpeed or 0
+	end
+	if param == 2 then
+		if not ent then return end
+		self.Autostop.SignalLink = ent.ASSignalLink
+		self.Autostop.MaxSpeed = ent.ASMaxSpeed
+		self.Autostop.Type = ent.ASType
+		net.Start("metrostroi-stool-signalling")
+			net.WriteUInt(3,8)
+			net.WriteTable(self.Autostop)
+		net.Send(self:GetOwner())
+	else
+		if not ent then ent = ents.Create("gmod_track_autostop_msa") end
+		if IsValid(ent) then
+			if param ~= 2 then
+				ent:SetPos(tr.centerpos - tr.up * 9.5)
+				ent:SetAngles((-tr.right):Angle())
+			end
+			if not found then
+				ent:Spawn()
+				undo.Create("signalling")
+					undo.AddEntity(ent)
+					undo.SetPlayer(ply)
+				undo.Finish()
+			end
+			ent.ASSignalLink = name
+			ent.ASMaxSpeed = speed
+			ent.ASType = self.Autostop.Type
+			ent:SendUpdate()
+		end
+		return ent
+	end
+end
+function TOOL:SpawnKGU(ply, trace, param)
+	local pos = trace.HitPos
+	local tr = Metrostroi.RerailGetTrackData(trace.HitPos,ply:GetAimVector())
+	if not tr then return end
+    local ang = (-tr.right):Angle()
+    ang:RotateAroundAxis(ang:Up(), 90)
+	local ent
+	local found = false
+	local entlist = ents.FindInSphere(pos,64)
+	for k,v in pairs(entlist) do
+		if v:GetClass() == "gmod_track_kgu_msa" then
+			ent = v
+			found = true
+		end
+	end
+	if param == 2 then
+		if not ent then return end
+		self.KGU.SignalLink = ent.KGUSignalLink
+		self.KGU.Lense = ent.KGULense
+		net.Start("metrostroi-stool-signalling")
+			net.WriteUInt(4,8)
+			net.WriteTable(self.KGU)
+		net.Send(self:GetOwner())
+	else
+		if not ent then ent = ents.Create("gmod_track_kgu_msa") end
+		if IsValid(ent) then
+			if param ~= 2 then
+				ent:SetPos(tr.centerpos - tr.up * 9.5)
+				ent:SetAngles(ang)
+			end
+			if not found then
+				ent:Spawn()
+				undo.Create("signalling")
+					undo.AddEntity(ent)
+					undo.SetPlayer(ply)
+				undo.Finish()
+			end
+			ent.KGUSignalLink = self.KGU.SignalLink
+			ent.KGULense = self.KGU.Lense
+			ent:SendUpdate()
+		end
+		return ent
+	end
+end
 function TOOL:LeftClick(trace)
 	if CLIENT then
 		return true
@@ -541,7 +635,7 @@ end
 net.Receive("metrostroi-stool-signalling", function(_, ply)
 	local TOOL = LocalPlayer and LocalPlayer():GetTool("signalling") or ply:GetTool("signalling")
 	local typ = net.ReadUInt(8)
-	if typ == 4 then // <--- Добавьте этот блок (ID 4 для KGU)
+	if typ == 4 then
 		TOOL.KGU = net.ReadTable()
 		if CLIENT then
 			RunConsoleCommand("signalling_kgudata",util.TableToJSON(TOOL.KGU))
@@ -932,7 +1026,7 @@ function TOOL:BuildCPanelCustom()
 			if not tool.Signal.Routes then return end
 			for k, v in ipairs(tool.Signal.Routes) do
 				local typeName = Type_Signal_Route[v.Manual and 2 or v.Repeater and 3 or v.Emer and 4 or 1]
-				RouteList:AddLine(k, v.RouteName or "---", typeName)
+				RouteList:AddLine(k, v.RouteName or "", typeName)
 			end
 			if tool.Signal.Routes[self.SelectedRoute] then
 				local line = RouteList:GetLine(self.SelectedRoute)
@@ -952,7 +1046,7 @@ function TOOL:BuildCPanelCustom()
 		local btnUp = vgui.Create("DButton", ControlBtnPnl)
 			btnUp:SetText("▲")
 			btnUp:Dock(LEFT)
-			btnUp:SetWide(40)
+			btnUp:SetWide(20)
 			btnUp.DoClick = function()
 				local idx = self.SelectedRoute
 				if idx > 1 then
@@ -963,10 +1057,32 @@ function TOOL:BuildCPanelCustom()
 					self:BuildCPanelCustom()
 				end
 			end
+		local btnCopy = vgui.Create("DButton", ControlBtnPnl)
+			btnCopy:SetText("")
+			btnCopy:SetIcon("icon16/page_copy.png")
+			btnCopy:Dock(LEFT)
+			btnCopy:DockMargin(1, 0, 0, 0)
+			btnCopy:SetWide(25)
+			btnCopy:SetTextColor(Color(0, 0, 0))
+			btnCopy.DoClick = function()
+				if #tool.Signal.Routes != 0 then
+					local idx = self.SelectedRoute
+					local sourceRoute = tool.Signal.Routes[idx]
+					if sourceRoute then
+						local newData = table.Copy(sourceRoute)
+						local insertAt = idx + 1
+						table.insert(tool.Signal.Routes, insertAt, newData)
+						self.SelectedRoute = insertAt
+						tool:SendSettings()
+						self:BuildCPanelCustom()
+					end
+				end
+			end
 		local btnDown = vgui.Create("DButton", ControlBtnPnl)
 			btnDown:SetText("▼")
 			btnDown:Dock(LEFT)
-			btnDown:SetWide(40)
+			btnDown:DockMargin(1, 0, 0, 0)
+			btnDown:SetWide(20)
 			btnDown.DoClick = function()
 				local idx = self.SelectedRoute
 				if idx < #tool.Signal.Routes then
@@ -977,24 +1093,6 @@ function TOOL:BuildCPanelCustom()
 					self:BuildCPanelCustom()
 				end
 			end
-		local btnAdd = vgui.Create("DButton", ControlBtnPnl)
-			btnAdd:SetText(Add_Route)
-			btnAdd:Dock(LEFT)
-			btnAdd:DockMargin(5, 0, 0, 0)
-			btnAdd:SetWide(75)
-			btnAdd:SetTextColor(Color(0, 120, 0))
-			btnAdd.DoClick = function()
-				if not tool.Signal.Routes then tool.Signal.Routes = {} end
-				local insertAt = self.SelectedRoute + 1
-				table.insert(tool.Signal.Routes, insertAt, {
-					Manual = tool.RouteType == 2,
-					Repeater = tool.RouteType == 3,
-					Emer = tool.RouteType == 4,
-				})
-				self.SelectedRoute = insertAt
-				tool:SendSettings()
-				self:BuildCPanelCustom()
-			end
 		local btnDel = vgui.Create("DButton", ControlBtnPnl)
 			btnDel:SetText(Remove_Route)
 			btnDel:Dock(RIGHT)
@@ -1003,10 +1101,29 @@ function TOOL:BuildCPanelCustom()
 			btnDel.DoClick = function()
 				if tool.Signal.Routes[self.SelectedRoute] then
 					table.remove(tool.Signal.Routes, self.SelectedRoute)
-					self.SelectedRoute = math.max(1, self.SelectedRoute - 1)
+					self.SelectedRoute = math.max(1, math.min(self.SelectedRoute, #tool.Signal.Routes))
+					if #tool.Signal.Routes == 0 then self.SelectedRoute = 1 end
 					tool:SendSettings()
 					self:BuildCPanelCustom()
 				end
+			end
+		local btnAdd = vgui.Create("DButton", ControlBtnPnl)
+			btnAdd:SetText(Add_Route)
+			btnAdd:Dock(RIGHT)
+			btnAdd:DockMargin(0, 0, 1, 0)
+			btnAdd:SetWide(75)
+			btnAdd:SetTextColor(Color(0, 120, 0))
+			btnAdd.DoClick = function()
+				if not tool.Signal.Routes then tool.Signal.Routes = {} end
+				local insertAt = #tool.Signal.Routes == 0 and 1 or (self.SelectedRoute + 1)
+				table.insert(tool.Signal.Routes, insertAt, {
+					Manual = tool.RouteType == 2,
+					Repeater = tool.RouteType == 3,
+					Emer = tool.RouteType == 4,
+				})
+				self.SelectedRoute = insertAt
+				tool:SendSettings()
+				self:BuildCPanelCustom()
 			end
 		CPanel:AddItem(ControlBtnPnl)
 		local i = self.SelectedRoute
@@ -1031,6 +1148,7 @@ function TOOL:BuildCPanelCustom()
 			CollCat:AddItem(VTypeOfRouteI)
 			--Маршрут
 			local VRNT, VRNN = CollCat:TextEntry(Routes)
+				VRNT:SetTooltip(Routes_Des)
 				VRNT:SetUpdateOnType(true)
 				VRNT:SetText(routeData.RouteName or "")
 				VRNT.OnValueChange = function(s, val)
@@ -1040,6 +1158,7 @@ function TOOL:BuildCPanelCustom()
 				end
 			--Следующий светофор
 			local VNexT, VNexN = CollCat:TextEntry(NextSig)
+				VNexT:SetTooltip(NextSig_Des)
 				VNexT:SetUpdateOnType(true)
 				VNexT:SetText(routeData.NextSignal or "")
 				VNexT.OnValueChange = function(s, val)
@@ -1057,6 +1176,7 @@ function TOOL:BuildCPanelCustom()
 			--Линзы
 			if not tool.Signal.ARSOnly then
 				local VLighT, VLighN = CollCat:TextEntry(Lenses_Route)
+					VLighT:SetTooltip(Lenses_Route_Des)
 					VLighT:SetUpdateOnType(true)
 					VLighT:SetText(routeData.Lights or "")
 					VLighT.OnValueChange = function(s, val)
@@ -1069,15 +1189,23 @@ function TOOL:BuildCPanelCustom()
 			--АРС
 			if not routeData.Repeater then
 				local VARST, VARSN = CollCat:TextEntry(ARSC)
+					VARST:SetTooltip(ARSC_Des)
 					VARST:SetUpdateOnType(true)
 					VARST:SetText(routeData.ARSCodes or "")
 					VARST.OnValueChange = function(s, val)
-						routeData.ARSCodes = val
+						local NewValue = val:gsub("[^0124678]", "")
+						routeData.ARSCodes = NewValue
+						if val ~= NewValue then
+							local pos = s:GetCaretPos()
+							s:SetText(NewValue)
+							s:SetCaretPos(math.min(pos, #NewValue)) 
+						end
 						tool:SendSettings()
 					end
 			end
 			--Стрелки
 			local VSwiT, VSwiN = CollCat:TextEntry(Switches)
+				VSwiT:SetTooltip(Switches_Des)
 				VSwiT:SetUpdateOnType(true)
 				VSwiT:SetText(routeData.Switches or "")
 				VSwiT.OnValueChange = function(s, val)
@@ -1091,9 +1219,10 @@ function TOOL:BuildCPanelCustom()
 				VEnRouC.OnChange = function(s, val)
 					routeData.EnRou = val
 					tool:SendSettings()
-				end 
+				end
 			--Буква для МУ
 			local VIndicT = CollCat:TextEntry(En_Routes)
+				VIndicT:SetTooltip(En_Routes_Des)
 				VIndicT:SetUpdateOnType(true)
 				VIndicT:SetText(routeData.Ind or "")
 				VIndicT.OnValueChange = function(s, val)
@@ -1111,6 +1240,7 @@ function TOOL:BuildCPanelCustom()
 				end
 			--Контрольный сигнал
 			local VSigLink = CollCat:TextEntry(En_Routes_SigLink)
+				VSigLink:SetTooltip(En_Routes_SigLink_Des)
 				VSigLink:SetUpdateOnType(true)
 				VSigLink:SetText(routeData.NSRou or "")
 				VSigLink:SetTooltip(En_Routes_SigLink_Des)
@@ -1126,90 +1256,15 @@ function TOOL:BuildCPanelCustom()
 					end
 					tool:SendSettings()
 				end
+			--скрытие DRS
+			--[[local VRouteVisible = CollCat:CheckBox(Enable_RV)
+				VRouteVisible:SetTooltip(Enable_RV_Des)
+				VRouteVisible:SetValue(tool.Signal.Routes[i].RVisible or false)
+				function VRouteVisible:OnChange()
+					tool.Signal.Routes[i].RVisible = self:GetChecked()
+					tool:SendSettings()
+				end]]--
 			CPanel:AddItem(CollCat)
-		end
-	elseif tool.Type == 2 then
-        local currentSignID = (tool.Sign.Type or 1) - 1
-		local function FindSignInfo(targetID)
-			for catID, subTable in pairs(Type_Signs_Choice) do
-				for _, signData in ipairs(subTable) do
-					if signData[2] == targetID then
-						return catID, signData[1]
-					end
-				end
-			end
-			return nil, nil
-		end
-		local foundCatID, foundSignName = FindSignInfo(currentSignID)
-		local VCatType = vgui.Create("DComboBox")
-		local catName = Type_Signs[foundCatID] or Type_Signs[0]
-		VCatType:SetValue(catName) 
-		for i = 1, #Type_Signs do
-			VCatType:AddChoice(Type_Signs[i], i)
-		end
-		CPanel:AddItem(VCatType)
-		local VSType = vgui.Create("DComboBox")
-		VSType:SetColor(color_black)
-		CPanel:AddItem(VSType)
-		local VYOffT = CPanel:NumSlider(Y_Off, nil, -100, 100, 0)
-		VYOffT:SetValue(tool.Sign.YOffset or 0)
-		VYOffT:SetVisible(false)
-		VYOffT.OnValueChanged = function(num)
-			tool.Sign.YOffset = VYOffT:GetValue()
-			tool:SendSettings()
-		end
-		local VZOffT = CPanel:NumSlider(Z_Off, nil, -50, 50, 0)
-		VZOffT:SetValue(tool.Sign.ZOffset or 0)
-		VZOffT:SetVisible(false)
-		VZOffT.OnValueChanged = function(num)
-			tool.Sign.ZOffset = VZOffT:GetValue()
-			tool:SendSettings()
-		end
-
-		local VLeftOC = CPanel:CheckBox(Left_Signs)
-		VLeftOC:SetTooltip(Left_Signs_Des)
-		VLeftOC:SetValue(tool.Sign.Left or false)
-		VLeftOC:SetVisible(false)
-		function VLeftOC:OnChange()
-			tool.Sign.Left = self:GetChecked()
-			tool:SendSettings()
-		end
-		local function FillSignChoices(catID, selectedSignID)
-			VSType:Clear()
-			VSType:SetValue(Select_Signs)
-			local subTable = Type_Signs_Choice[catID]
-			if subTable then
-				for i = 1, #subTable do
-					VSType:AddChoice(subTable[i][1], subTable[i][2])
-				end
-			end
-			if selectedSignID then
-				for i = 1, #subTable do
-					if subTable[i][2] == selectedSignID then
-						VSType:SetValue(subTable[i][1])
-						VYOffT:SetVisible(true)
-						VZOffT:SetVisible(true)
-						VLeftOC:SetVisible(true)
-						break
-					end
-				end
-			end
-		end
-		if foundCatID then
-			FillSignChoices(foundCatID, currentSignID)
-		end
-		VCatType.OnSelect = function(_, index, name, data)
-			VYOffT:SetVisible(false)
-			VZOffT:SetVisible(false)
-			VLeftOC:SetVisible(false)
-			FillSignChoices(data, nil)
-		end
-		VSType.OnSelect = function(_, index, name, realID)
-			tool.Sign.Type = realID + 1
-			tool:SendSettings()
-			VYOffT:SetVisible(true)
-			VZOffT:SetVisible(true)
-			VLeftOC:SetVisible(true)
 		end
 	elseif tool.Type == 2 then
         local currentSignID = (tool.Sign.Type or 1) - 1
@@ -1786,7 +1841,7 @@ function TOOL:BuildCPanelCustom()
 		local es = ""
 		local VSKGUSignal = CPanel:TextEntry(KGU_Signal_Link)
 		VSKGUSignal:SetTooltip(KGU_Signal_Link_Des)
-		VSKGUSignal:SetValue(tool.KGU.SignalLinkK or es)
+		VSKGUSignal:SetValue(tool.KGU.SignalLink or es)
 		VSKGUSignal:SetEnterAllowed(false)
 		function VSKGUSignal:OnChange()
 			local val = self:GetValue()
@@ -1796,12 +1851,12 @@ function TOOL:BuildCPanelCustom()
 			if val ~= clean then self:SetText(clean) self:SetCaretPos(#clean) end
 		end
 		function VSKGUSignal:OnLoseFocus()
-			tool.KGU.SignalLinkK = self:GetValue()
+			tool.KGU.SignalLink = self:GetValue()
 			tool:SendSettings()
 		end
 		local VSKGULense = CPanel:TextEntry(KGU_Lenses_Link)
 		VSKGULense:SetTooltip(KGU_Lenses_Link_Des)
-		VSKGULense:SetValue(tool.KGU.LenseK or es)
+		VSKGULense:SetValue(tool.KGU.Lense or es)
 		VSKGULense:SetEnterAllowed(false) 
 		function VSKGULense:OnChange()
 			local val = self:GetValue()
@@ -1810,153 +1865,12 @@ function TOOL:BuildCPanelCustom()
 			if val ~= clean then self:SetText(clean) self:SetCaretPos(#clean) end
 		end
 		function VSKGULense:OnLoseFocus()
-			tool.KGU.LenseK = self:GetValue()
+			tool.KGU.Lense = self:GetValue()
 			tool:SendSettings()
 		end
 	end
 end
 
-function TOOL:SpawnAutostop(ply,trace,param)
-	self.Autostop = self.Autostop or {}
-	local tr = Metrostroi.RerailGetTrackData(trace.HitPos,ply:GetAimVector())
-	if not tr then return end
-	local ang = (-tr.right):Angle()
-	local pos = tr.centerpos - tr.up * 9.5
-	local siglink = self.Autostop.SignalLink
-	local typeas = self.Autostop.Type
-	if not siglink or siglink == "" then siglink = nil end
-
-	if param == 2 then
-		local mindist,ent
-		for k,v in pairs(ents.FindInSphere(trace.HitPos,64)) do
-			if not IsValid(v) or v:GetClass() ~= "gmod_track_autostop_msa" then continue end
-			local dist = v:GetPos():DistToSqr(trace.HitPos)
-			if not mindist or mindist < dist then
-				mindist = dist
-				ent = v
-			end
-		end
-		if not ent then return true end
-		self.Autostop.SignalLink = ent.SignalLink
-		self.Autostop.MaxSpeed = ent.MaxSpeed
-		self.Autostop.Type = ent.Type
-		net.Start("metrostroi-stool-signalling")
-			net.WriteUInt(3,8)
-			net.WriteTable(self.Autostop)
-		net.Send(self:GetOwner())
-		return ent
-	end
-
-	--если рядом есть автостоп линкующийся к тому же сигналу и он стоит в том же направлении (разница углов < 45), то просто подвинуть его
-	local ent, mindist
-	for k,v in pairs(ents.FindInSphere(trace.HitPos,64)) do
-		if not IsValid(v) or v:GetClass() ~= "gmod_track_autostop_msa" or v.SignalLink ~= siglink or math.abs(v:GetAngles()[2] - ang[2]) > 45 then continue end
-		local dist = v:GetPos():DistToSqr(trace.HitPos)
-		if not mindist or dist < mindist then
-			mindist = dist
-			ent = v
-		end
-	end
-
-	if ent then
-		ent:SetPos(pos)
-		ent:SetAngles(ang)
-		ent.MaxSpeed = self.Autostop.MaxSpeed
-	else
-		local name = ""
-		local speed = 0
-
-		if self.Autostop.Type == 1 then
-			name = siglink or ""
-			speed = 0
-		elseif self.Autostop.Type == 2 or self.Autostop.Type == 4 then
-			name = ""
-			speed = self.Autostop.MaxSpeed or 0
-		end
-
-		ent = Metrostroi.SpawnAutostop(
-			pos,
-			ang,
-			name,
-			speed,
-			self.Autostop.Type
-		)
-	end
-	ent.Type = self.Autostop.Type
-	Metrostroi.UpdateSignalEntities()
-
-	return ent
-end
-function TOOL:SpawnKGU(ply, trace, param)
-	self.KGU = self.KGU or {}
-	
-	local tr = Metrostroi.RerailGetTrackData(trace.HitPos, ply:GetAimVector())
-	if not tr then return end
-	
-	local ang = (-tr.right):Angle()
-	ang:RotateAroundAxis(ang:Up(), 90)
-	local pos = tr.centerpos - tr.up * 10
-	local siglink = self.KGU.SignalLinkK or ""
-	local lense = self.KGU.LenseK or 1
-	if param == 2 then
-		local ent
-		local mindist
-		for k,v in pairs(ents.FindInSphere(trace.HitPos, 64)) do
-			if not IsValid(v) or v:GetClass() ~= "gmod_track_kgu_msa" then continue end
-			local dist = v:GetPos():DistToSqr(trace.HitPos)
-			if not mindist or dist < mindist then
-				mindist = dist
-				ent = v
-			end
-		end
-		if not ent then return true end
-		self.KGU.SignalLinkK = ent:GetKGUSignalLink()
-		self.KGU.LenseK = ent:GetKGULense()
-		net.Start("metrostroi-stool-signalling")
-			net.WriteUInt(4, 8)
-			net.WriteTable({
-				SignalLinkK = self.KGU.SignalLinkK,
-				LenseK = self.KGU.LenseK,
-			})
-		net.Send(self:GetOwner())
-		return ent
-	end
-	local ent, mindist
-	for k,v in pairs(ents.FindInSphere(trace.HitPos, 64)) do
-		if not IsValid(v) or v:GetClass() ~= "gmod_track_kgu_msa" then continue end
-		if v:GetKGUSignalLink() ~= siglink or v:GetKGULense() ~= lense or math.abs(v:GetAngles()[2] - ang[2]) > 45 then continue end
-		local dist = v:GetPos():DistToSqr(trace.HitPos)
-		if not mindist or dist < mindist then
-			mindist = dist
-			ent = v
-		end
-	end
-
-	if IsValid(ent) then
-		ent:SetPos(pos)
-		ent:SetAngles(ang)
-		ent:SetKGUSignalLink(siglink)
-		ent:SetKGULense(lense)
-	else
-		ent = ents.Create("gmod_track_kgu_msa")		
-		ent:SetPos(pos) 
-		ent:SetAngles(ang)
-		ent:Spawn()
-		ent:Activate()
-		
-		ent:SetKGUSignalLink(siglink)
-		ent:SetKGULense(lense)
-	end
-	
-	Metrostroi.UpdateSignalEntities()
-
-	return ent
-end
-function TOOL:SetKGUParams(ply, table)
-	self.KGU = self.KGU or {}
-	self.KGU.SignalLinkK = table.SignalLinkK or ""
-	self.KGU.LenseK = tostring(table.LenseK or "0")
-end
 TOOL.NotBuilt = true
 
 function TOOL:Think()

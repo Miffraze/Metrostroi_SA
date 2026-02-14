@@ -2,34 +2,37 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
-util.AddNetworkString "metrostroi-autostop"
+util.AddNetworkString("metrostroi-autostop-msa")
 
 function ENT:LinkToSignal()
-    --есть таблица Metrostroi.SignalEntitiesByName[self.SignalLink], но она инициилизируется для меня слишком поздно (при загрузке из файла)
+    --есть таблица Metrostroi.SignalEntitiesByName[self.ASSignalLink], но она инициилизируется для меня слишком поздно (при загрузке из файла)
     self.Sig = nil
-    if self.SignalLink then
+    if self.ASSignalLink then
         for k, v in pairs(ents.FindByClass("gmod_track_signal")) do
             if not IsValid(v) then continue end
-            if v.Name == self.SignalLink then
+            if v.Name == self.ASSignalLink then
                 self.Sig = v
                 break
             end
         end
     end
 end
-
 function ENT:Initialize()
-    self.Type = tonumber(self.Type) or 1
-    self.ModelPath = self.ModelsTable[self.Type][1]
-    self.MaxSpeed = tonumber(self.MaxSpeed) or 35
-    if not self.SignalLink or self.SignalLink == "" then self.SignalLink = nil end
-    self:LinkToSignal()
-    self:SetNW2Int("type", self.Type)
-end
+    local tr = Metrostroi.RerailGetTrackData(self:GetPos(), self:GetAngles():Forward())
+    if tr and tr.node1 then
+        self.TrackPos = tr.pos
+        self.TrackX = tr.x
+        self.TrackDir = tr.dir
+        self.TrackNode = tr.node1
+        Metrostroi.AutostopsForNode[tr.node1] = Metrostroi.AutostopsForNode[tr.node1] or {}
+        Metrostroi.AutostopsForNode[tr.node1][tr.dir] = Metrostroi.AutostopsForNode[tr.node1][tr.dir] or { [true] = {}, [false] = {} }
+        table.insert(Metrostroi.AutostopsForNode[tr.node1][tr.dir][true], self)
+        table.insert(Metrostroi.AutostopsForNode[tr.node1][tr.dir][false], self)
+    end
 
-function ENT:Think()
-    self:NextThink(CurTime() + 2)
-    return true
+    self:LinkToSignal()
+    self:SetNW2Int("type", self.ASType)
+    self:SendUpdate()
 end
 
 local et = {}
@@ -60,15 +63,33 @@ timer.Create("Metrostroi Autostop think", 0.75, 0, function()
                 end
             end
         end
-
         for backautostop in pairs(backs) do
-            if train.AutostopsForw and train.AutostopsForw[backautostop] and backautostop:GetNW2Bool("Autostop") and (not backautostop.MaxSpeed or tonumber(backautostop.MaxSpeed) < train.Speed) then
-                local nomsg = hook.Run("MetrostroiPassedAutostop", train, backautostop)
-                train.Pneumatic:TriggerInput("Autostop", nomsg and 0 or 1)
+            if train.AutostopsForw and train.AutostopsForw[backautostop] then
+                if (backautostop:GetNW2Bool("Autostop") and backautostop.ASType == 1) or (backautostop.ASType != 1 and (not backautostop.ASMaxSpeed or tonumber(backautostop.ASMaxSpeed) < train.Speed) or nil) then
+                    local nomsg = hook.Run("MetrostroiPassedAutostop", train, backautostop)
+                    train.Pneumatic:TriggerInput("Autostop", nomsg and 0 or 1)
+                end
             end
+            
+            print(backautostop:GetNW2Bool("Autostop"), backautostop.ASMaxSpeed, train.Speed, backautostop.ASType)
         end
         train.AutostopsForw = forws
         train.AutostopsBack = backs
         --print(forws, backs)
+    end
+end)
+function ENT:SendUpdate(ply)
+    net.Start("metrostroi-autostop-msa")
+        net.WriteEntity(self)
+        net.WriteInt(tonumber(self.ASType) or 1, 8)
+        net.WriteString(self.ASSignalLink or "")
+        net.WriteInt(tonumber(self.ASMaxSpeed) or 35, 32)
+    if ply then net.Send(ply) else net.Broadcast() end
+end
+
+net.Receive("metrostroi-autostop-msa", function(_, ply)
+    local ent = net.ReadEntity()
+    if IsValid(ent) and ent.SendUpdate then
+        ent:SendUpdate(ply)
     end
 end)

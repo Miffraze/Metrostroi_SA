@@ -1,41 +1,23 @@
 include("shared.lua")
+net.Receive("metrostroi-kgu-msa", function()
+    local ent = net.ReadEntity()
+    if not IsValid(ent) then return end
+    ent.KGUSignalLink = net.ReadString()
+    ent.KGULense = net.ReadString()
+end)
 function ENT:Initialize()
     self.AnimationOn = self:GetNetworkedBool("KGUState", false) 
     self:SetAnimation(self.AnimationOn)
     self.PhysgunDisabled = true
     local phys = self:GetPhysicsObject()
     if IsValid(phys) then
-        phys:EnableMotion(false) -- Замораживает объект в воздухе
+        phys:EnableMotion(false)
     end
 end
 
 function ENT:Draw()
     self:DrawModel()
 end
-
-function ENT:OnNetworkDataChanged(key, value)
-    if key == "KGUState" then 
-        self:SetAnimation(value)
-    end
-end
-
-function ENT:SetAnimation(state)
-    if state == self.AnimationOn then return end
-    self.AnimationOn = state
-
-    local sequenceName = state and "activate" or "idle"
-    local seqID = self.KGU_Model:LookupSequence(sequenceName)
-    
-    if seqID == -1 then 
-        self.KGU_Model:SetPoseParameter("hit_state", state and 1 or 0)
-        return 
-    end
-
-    self.KGU_Model:SetSequence(seqID)
-    self.KGU_Model:SetPlaybackRate(1)
-    self.KGU_Model:SetCycle(0)
-end
-
 function ENT:Think()
     self:NextThink(CurTime())
     return true

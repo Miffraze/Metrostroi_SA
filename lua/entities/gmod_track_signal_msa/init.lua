@@ -668,61 +668,76 @@ function ENT:Think(my)
 			if self.Routes[self.Route or 1].Repeater and IsValid(self.NextSignalLink) and (not self.Routes[self.Route or 1].Lights or self.Routes[self.Route or 1].Lights == "") then
 				break
 			end
-			if v ~= "M" then
-				--get the some models data
-				local data = #v ~= 0 and self.TrafficLightModels[self.SignalType][#v-1] or self.TrafficLightModels[self.SignalType][self.Signal_IS]
-				-- if not data then continue end
-				for i = 1,#v do
-					--Get the LightID and check, is this light must light up
-					local LightID = IsValid(self.NextSignalLink) and math.min(#Route.LightsExploded,self.FreeBS+1) or 1
-					local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or ((v[i] == "W" and self.InvationSignal and self.GoodInvationSignal == index) and 1 or 0)
-					local MustBlink = 
-					(v[i] == "W" and self.InvationSignal and self.GoodInvationSignal == index) or 
-					(AverageState > 0 and Route.LightsExploded[LightID][AverageState+1] == "b") --Blinking, when next is "b" (or it's invasion signal')
-					self.Sig = self.Sig..(AverageState > 0 and (MustBlink and 2 or 1) or 0)
+			for i = 1, #v do
+				local char = v:sub(i, i) 
+				if char == "X" then
+					self.Sig = self.Sig .. "0"
+				else
+					local LightID = IsValid(self.NextSignalLink) and math.min(#Route.LightsExploded, self.FreeBS + 1) or 1
+					local AverageState =
+						Route.LightsExploded[LightID]:find(tostring(index)) or 
+						((char == "W" and self.InvationSignal and self.GoodInvationSignal == index) and 1 or 0)
+					local MustBlink =
+						(char == "W" and self.InvationSignal and self.GoodInvationSignal == index) or 
+						(AverageState > 0 and Route.LightsExploded[LightID][AverageState + 1] == "b")
+					self.Sig = self.Sig .. (AverageState > 0 and (MustBlink and 2 or 1) or 0)
 					if AverageState > 0 then
-						if self.GoodInvationSignal ~= index then self.Colors = self.Colors..(MustBlink and v[i]:lower() or v[i]:upper()) end
-						if v[i] == "R" then
+						if self.GoodInvationSignal ~= index then 
+							self.Colors = self.Colors .. (MustBlink and char:lower() or char:upper()) 
+						end
+						if char == "R" then 
 							self.AutoEnabled = not self.NonAutoStop
 							self.Red = true
 						end
 					end
 					index = index + 1
-					--print(Route.LightsExploded[LightID])
-					--print(self.Name, self.InvationSignal, self.GoodInvationSignal, MustBlink,LightID,AverageState)
 				end
 			end
 		end
 		if self.KGUActive then
-            self.ARSSpeedLimit = 0
+			self.ARSSpeedLimit = 0
 			self.SPB_325Hz = true
-            local total_lenses = 0
-            for _, v in ipairs(self.Lenses or {}) do 
-                if v ~= "M" then total_lenses = total_lenses + #v end
-            end
-
-            self.Sig = string.rep("0", total_lenses)
-            self.Colors = string.rep(" ", total_lenses)
-            
-            if self.KGULenseIndex and self.KGULenseIndex > 0 then
-                local lenseStr = tostring(self.KGULenseIndex)
-                for i = 1, #lenseStr do
-                    local char = string.sub(lenseStr, i, i)
-                    local idx = tonumber(char)
-                    if idx and idx > 0 and idx <= total_lenses then
-                        self.Sig = StringSetChar(self.Sig, idx, "1")
-                        if idx == 1 then
-                            self.Red = true
-                        end
-                    end
-                end
-            end
-			if not self.NonAutoStop then
-			    self.AutoEnabled = true
+			
+			local active_idx = {}
+			if self.KGULenseIndex and self.KGULenseIndex > 0 then
+				local s = tostring(self.KGULenseIndex)
+				for i = 1, #s do
+					local num = tonumber(s:sub(i, i))
+					if num then active_idx[num] = true end
+				end
 			end
-        end
-	end
+			local total_chars = 0
+			for _, v in ipairs(self.Lenses or {}) do 
+				if v ~= "M" then total_chars = total_chars + #v end
+			end
+			self.Sig = string.rep("0", total_chars)
+			self.Colors = string.rep(" ", total_chars)
+			local logical_index = 0
+			local phys_index = 0
 
+			for _, v in ipairs(self.Lenses or {}) do
+				if v ~= "M" then
+					for i = 1, #v do
+						phys_index = phys_index + 1
+						local char = v:sub(i, i)
+						if char ~= "X" then
+							logical_index = logical_index + 1
+							if active_idx[logical_index] then
+								self.Sig = StringSetChar(self.Sig, phys_index, "1")
+								if logical_index == 1 then
+									self.Red = true
+								end
+							end
+						else
+						end
+					end
+				end
+			end
+			if not self.NonAutoStop then
+				self.AutoEnabled = true
+			end
+		end
+	end
 	if self.Controllers then
 		for k,v in pairs(self.Controllers) do
 			if self.Sig ~= v.Sig then

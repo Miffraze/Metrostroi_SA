@@ -388,10 +388,6 @@ if not GetConVar("hidetrains_behind_player") then
     CreateClientConVar("hidetrains_behind_player", "1", true, false, "", 0, 1)
 end
 
-if not GetConVar("draw_signal_routes") then
-    CreateClientConVar("draw_signal_routes", "1", true, false, "", 0, 1)
-end
-
 if not GetConVar("msa_signal_dist") then
     CreateClientConVar("msa_signal_dist", 4096, true)
 end
@@ -406,7 +402,8 @@ local langtbl = {
         ["DrawSignalRoutes"] = {"Show signal commands"},
         ["MultiRendering"] = {"Enable multithread rendering"},
         ["DontMultiRendering"] = {"Do not touch multithread rendering"},
-        ["SignalDist"] = {"Lens light render distance"}
+        ["SignalDist"] = {"Lens light render distance"},
+        ["DRSDist"] = {"Signal command\ndisplay distance"}
     },
     ["ru"] = {
         ["ScreenHotMod"] = {"Режим съёмки"},
@@ -417,7 +414,8 @@ local langtbl = {
         ["DrawSignalRoutes"] = {"Отображать команды светофоров"},
         ["MultiRendering"] = {"Вкл. многопоточный рендеринг"},
         ["DontMultiRendering"] = {"Не трогать многопоточный рендеринг"},
-        ["SignalDist"] = {"Рендер света линз"}
+        ["SignalDist"] = {"Рендер света линз"},
+        ["DRSDist"] = {"Дистанция отобр.\nкоманд светофоров"}
     }
 }
 
@@ -435,7 +433,6 @@ local function Optimization(panel)
     panel:CheckBox(ltbl["HideOtherTrains"][1], "hideothertrains")
     panel:CheckBox(ltbl["HideTrainsPlayer"][1], "hidetrains_behind_player")
     panel:CheckBox(ltbl["HideTrainsProps"][1], "hidetrains_behind_props")
-    panel:CheckBox(ltbl["DrawSignalRoutes"][1], "draw_signal_routes")
     panel:CheckBox(ltbl["MultiRendering"][1], "multi_thread_rendering_enabled")
     panel:CheckBox(ltbl["DontMultiRendering"][1], "dont_touch_multi_thread_rendering")
     panel:NumSlider(ltbl["SignalDist"][1], "msa_signal_dist", 0, 10240)

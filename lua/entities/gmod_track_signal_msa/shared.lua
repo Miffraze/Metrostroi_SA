@@ -344,6 +344,7 @@ ENT.TrafficLightModels[5] = {
 	kronOff = Vector(0,0,13),
 	step = Vector(0,0,11.49),
 	boxname = Vector(13.5,40,52.25),
+	boxnamestart = Vector(13.5,40,52.25),
 	stationboxoffset = Vector(13,38,50),
 	single	= { Vector(0,0,24), "models/virus/new_signals/light_single.mdl", {
 				[0] = Vector(7.22,-29.56,12.93),
@@ -357,24 +358,6 @@ ENT.TrafficLightModels[5] = {
 					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,12.93)},
 				}
 			}},
-	[1]	= { Vector(0,0,35), "models/virus/new_signals/light_2.mdl", {
-				[0] = Vector(7.22,-29.56,24.72),
-				[1] = Vector(7.22,-29.56,12.93),
-				["glass"]	= {
-					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,24.72)},
-					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,12.93)},
-				}
-			}},
-	[2]	= { Vector(0,0,46), "models/virus/new_signals/light_3.mdl", {
-				[0] = Vector(7.22,-29.56,36.54),
-				[1] = Vector(7.22,-29.56,24.72),
-				[2] = Vector(7.22,-29.56,12.93),---27.54
-				["glass"]	= {
-					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,36.54)},
-					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,24.72)},
-					{"models/metrostroi/signals/mus/lamp_lens.mdl",Vector(7.22,3,12.93)},
-				}
-				}},
 	X	= { Vector(0,0,46), "models/virus/new_signals/light_1.mdl", {
 			[0] = Vector(7.22,-29.56,12.93),---27.54
 			["glass"]	= {
