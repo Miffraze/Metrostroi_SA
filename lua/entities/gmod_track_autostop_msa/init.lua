@@ -71,7 +71,7 @@ timer.Create("Metrostroi Autostop think", 0.75, 0, function()
                 end
             end
             
-            print(backautostop:GetNW2Bool("Autostop"), backautostop.ASMaxSpeed, train.Speed, backautostop.ASType)
+            --print(backautostop:GetNW2Bool("Autostop"), backautostop.ASMaxSpeed, train.Speed, backautostop.ASType)
         end
         train.AutostopsForw = forws
         train.AutostopsBack = backs

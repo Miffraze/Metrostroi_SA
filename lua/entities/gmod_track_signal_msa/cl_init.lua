@@ -577,11 +577,11 @@ function ENT:CreateModels()
                         pos_start = numoffsetautostopbox - Vector(0, 0, i * 5.85)
                     end
                 else    
-                    if self.LightType ~= 5 then
+                    if self.LightType != 5 then
                         if not self.Left then
                             pos_start = OffBoxNameStart - Vector(14+i*-4.55,69,0)
                         else
-                            pos_start = OffBoxNameStart - Vector(-175.5+i*-4.55,69-1,0) + LeftLengOffBNS
+                            pos_start = OffBoxNameStart - Vector(-175.5+i*-4.55,69-1,0) + LeftLengOffBNS*2
                         end
                     else
                         if not self.Left then
