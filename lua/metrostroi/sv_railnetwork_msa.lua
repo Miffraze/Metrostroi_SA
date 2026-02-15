@@ -46,7 +46,14 @@ if not Metrostroi.Paths then
 
     Metrostroi.OldUpdateTime = 0
 end
-Metrostroi.SignalVersion = 1.9
+function VersionConverter(version)
+    local newVersion = ''
+    for index, value in pairs(string.Split(version, '.')) do
+        newVersion = newVersion .. string.rep("0", 3 - #value) .. value
+    end
+    return tonumber(newVersion)
+end
+Metrostroi.SignalVersion = VersionConverter('1.9.5')
 
 --------------------------------------------------------------------------------
 -- Size of spatial cells into which all the 3D space is divided
