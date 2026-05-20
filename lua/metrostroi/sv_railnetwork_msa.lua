@@ -916,19 +916,6 @@ function Metrostroi.IsTrackOccupied(src_node,x,dir,t)
 
     return #Trains > 0,Trains[#Trains],Trains[1]
 end
-
-hook.Add("EntityRemoved","MetrostroiRailNetwork",function(ent)
-    if Metrostroi.SpawnedTrains[ent] then
-        Metrostroi.SpawnedTrains[ent] = nil
-    end
-end)
-hook.Add("OnEntityCreated","MetrostroiRailNetwork",function(ent)
-    timer.Simple(0,function()
-        if IsValid(ent) and (ent.Base == "gmod_subway_base" or  ent:GetClass() == "gmod_subway_base") then
-            Metrostroi.SpawnedTrains[ent] = true
-        end
-    end)
-end)
 --------------------------------------------------------------------------------
 -- Update train positions
 --------------------------------------------------------------------------------
@@ -985,14 +972,6 @@ function Metrostroi.UpdateTrainPositions()
     end
 end
 local PervTimerIter = CurTime()
-hook.Add( "Think", "Metrostroi_TrainPositionTimer",function()
-    if CurTime()-PervTimerIter <= 0.15 then
-        Metrostroi.PredictTrainPositions()
-    else
-        PervTimerIter = CurTime()
-        Metrostroi.UpdateTrainPositions()
-    end
-end)
 
 
 --------------------------------------------------------------------------------
@@ -1661,25 +1640,6 @@ end
 --------------------------------------------------------------------------------
 -- Concommands and automatic loading of rail network
 --------------------------------------------------------------------------------
-hook.Add("Initialize", "Metrostroi_MapInitialize", function()
-    timer.Simple(2.0,Metrostroi.Load)
-end)
-hook.Add("Initialize", "Metrostroi_MapInitialize", function()
-    timer.Simple(2.0,Metrostroi.Load)
-end)
-
-hook.Add("PreCleanupMap", "Metrostroi_PreCleanupMap", function()
-    Metrostroi.IgnoreEntityUpdates = true
-end)
-hook.Add("PostCleanupMap", "Metrostroi_PostCleanupMap", function()
-    timer.Simple(0.05,function()
-        Metrostroi.IgnoreEntityUpdates = false
-        Metrostroi.UpdateSignalEntities()
-        Metrostroi.UpdateSwitchEntities()
-        Metrostroi.UpdateARSSections()
-    end)
-end)
-
 concommand.Add("metrostroi_save", function(ply, _, args)
     if (ply:IsValid()) and (not ply:IsAdmin()) then return end
     Metrostroi.Save()

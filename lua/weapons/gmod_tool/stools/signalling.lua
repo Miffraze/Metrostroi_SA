@@ -996,7 +996,7 @@ function TOOL:BuildCPanelCustom()
 				end
 		end
 
-		self.RouteListHeight = self.RouteListHeight or 75
+		self.RouteListHeight = self.RouteListHeight or 100
 		local RouteList
 		local HeightChoice = vgui.Create("DComboBox")
 		HeightChoice:SetValue(High_Table .. self.RouteListHeight)

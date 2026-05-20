@@ -498,36 +498,50 @@ function ENT:CreateModels()
         local min = 0
         for i = double and 2 or 0,#self.Name-1 do
             local id = (double and i-1 or i) - min
-            if double and self.BigLetter then
+            if double then
+                local model
+                local offset0, offset1
+                local offset0_left, offset1_left
+
+                if self.BigLetter and self.LightType != 2 then
+                    model = TLM.SignLetter.model
+                    offset0 = offset - Vector(0, 0, id * TLM.SignLetter.z - 5.3)
+                    offset1 = offset - Vector(0, 0, id * TLM.SignLetter.z + 0.5)
+                    offset0_left, offset1_left = offset0, offset1 
+
+                elseif self.BigLetter then
+                    model = TLM.SignLetter.model
+                    offset0 = offset - Vector(0, 0, id * TLM.SignLetter.z - 12.8)
+                    offset1 = offset - Vector(0, 0, id * TLM.SignLetter.z - 7)
+                    offset0_left, offset1_left = offset0, offset1
+
+                else
+                    model = TLM.SignLetterSmall.model
+                    offset0 = offset - TLM.SignLetterSmall[2]
+                    offset1 = offset - TLM.SignLetterSmall[1]
+                    offset0_left = offset - TLM.SignLetterSmall[1]
+                    offset1_left = offset - TLM.SignLetterSmall[2]
+                end
+                local bukva0 = Metrostroi.LiterWarper[self.Name[1]] or self.Name[1]
+                local bukva1 = Metrostroi.LiterWarper[self.Name[2]] or self.Name[2]
+
                 if not self.Left or self.Double then
-                    self:SpawnLetter(0,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z-5.3),(Metrostroi.LiterWarper[self.Name[0+1]] or self.Name[0+1]),true)
-                    self:SpawnLetter(1,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z+0.5),(Metrostroi.LiterWarper[self.Name[1+1]] or self.Name[1+1]),true)
+                    self:SpawnLetter(0, model, offset0, bukva0, true)
+                    self:SpawnLetter(1, model, offset1, bukva1, true)
                 end
                 if self.Left or self.Double then
-                    self:SpawnLetter(0,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z-5.3),(Metrostroi.LiterWarper[self.Name[0+1]] or self.Name[0+1]),false)
-                    self:SpawnLetter(1,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z+0.5),(Metrostroi.LiterWarper[self.Name[1+1]] or self.Name[1+1]),false)
-                end
-            elseif double then
-                if not self.Left or self.Double then
-                    self:SpawnLetter(0,TLM.SignLetterSmall.model,offset - TLM.SignLetterSmall[2],(Metrostroi.LiterWarper[self.Name[0+1]] or self.Name[0+1]),true)
-                    self:SpawnLetter(1,TLM.SignLetterSmall.model,offset - TLM.SignLetterSmall[1],(Metrostroi.LiterWarper[self.Name[1+1]] or self.Name[1+1]),true)
-                end
-                if self.Left or self.Double then
-                    self:SpawnLetter(0,TLM.SignLetterSmall.model,offset - TLM.SignLetterSmall[1],(Metrostroi.LiterWarper[self.Name[0+1]] or self.Name[0+1]),false)
-                    self:SpawnLetter(1,TLM.SignLetterSmall.model,offset - TLM.SignLetterSmall[2],(Metrostroi.LiterWarper[self.Name[1+1]] or self.Name[1+1]),false)
+                    self:SpawnLetter(0, model, offset0_left, bukva0, false)
+                    self:SpawnLetter(1, model, offset1_left, bukva1, false)
                 end
             end
             if double and i == 2 then offset = offset + TLM.DoubleOffset end
             if self.Name[i+1] == " " then continue end
             if self.Name[i+1] == "/" then min = min + 1; continue end
-            if self.BigLetter and self.LightType == 2 then
-                self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
-            elseif self.BigLetter then
+            if self.BigLetter and self.LightType != 2 then
                 self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z+7.9),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
             else
                 self:SpawnLetter(i,TLM.SignLetter.model,offset - Vector(0,0,id*TLM.SignLetter.z),(Metrostroi.LiterWarper[self.Name[i+1]] or self.Name[i+1]))
             end
-
         end
         if self.Name and self.Name:match("(/+)$") then
             local i = #self.Name
