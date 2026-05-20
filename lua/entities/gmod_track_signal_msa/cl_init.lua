@@ -494,7 +494,7 @@ function ENT:CreateModels()
             offset = offset - self.NamesOffset
         end
         --local double = self.LightType ~= 1 and string.find(self.Name,"^[A-Z][A-Z]")
-        local double = self.LightType != 1 and self.LightType != 2 and string.find(self.Name,"^[%a%p][%a%p]")
+        local double = self.LightType != 1 and string.find(self.Name,"^[%a%p][%a%p]")
         local min = 0
         for i = double and 2 or 0,#self.Name-1 do
             local id = (double and i-1 or i) - min
