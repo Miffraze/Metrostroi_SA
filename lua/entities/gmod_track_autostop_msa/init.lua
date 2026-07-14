@@ -30,24 +30,53 @@ function ENT:Initialize()
         table.insert(Metrostroi.AutostopsForNode[tr.node1][tr.dir][false], self)
     end
 
-    self:LinkToSignal()
     self:SetNW2Int("type", self.ASType)
     self:SendUpdate()
 end
-
-local et = {}
-timer.Create("Metrostroi Autostop think", 0.75, 0, function()
-    for _, ent in pairs(ents.FindByClass("gmod_track_autostop_msa")) do
-        if not IsValid(ent) then continue end
-        ent:SetNW2Bool("Autostop", not (IsValid(ent.Sig) and not ent.Sig.Red))
+function ENT:Think()
+    if not IsValid(self.Sig) and self.ASSignalLink and self.ASSignalLink != "" then
+        self:LinkToSignal()
+    end
+    --это чисто для отвязки AutostopEnabled и самой энтити автостопа
+    if IsValid(self.Sig) then
+        local AuState = self.Sig.AutoEnabled or false
+        if self:GetNW2Bool("AuState") != AuState then
+            self:SetNW2Bool("AuState", AuState)
+        end
+    else
+        if self:GetNW2Bool("AuState") != false then
+            self:SetNW2Bool("AuState", false)
+        end
     end
 
-    --тут определение следующего и предыдущего автостопа по ноуду для каждого паравоза. и вызов Train.Pneumatic:TriggerInput("Autostop",nomsg and 0 or 1) при проезде
+    self:NextThink(CurTime() + 0.2)
+    return true
+end
+local et = {}
+
+timer.Create("Metrostroi Autostop network sync", 0.75, 0, function()
+    for _, ent in pairs(ents.FindByClass("gmod_track_autostop_msa")) do
+        if IsValid(ent) then
+            ent:SetNW2Bool("Autostop", not (IsValid(ent.Sig) and not ent.Sig.Red))
+        end
+    end
+end)
+
+timer.Create("Metrostroi Autostop physics think", 0.1, 0, function()
     for train, pos in pairs(Metrostroi.TrainPositions or et) do
         pos = pos[1]
-        if not IsValid(train) or not train.SubwayTrain or not train.SubwayTrain.ALS or not train.SubwayTrain.ALS.HaveAutostop or not pos or Metrostroi.TrainDirections[train] == nil or not Metrostroi.AutostopsForNode or not Metrostroi.AutostopsForNode[pos.node1] or not Metrostroi.AutostopsForNode[pos.node1][Metrostroi.TrainDirections[train]] then continue end
-        
-        --сделано таблицами, потому что если сохранять только ближний автостоп, при близкостоящих автостопах и их быстром проезде нe сработает ни один
+
+        if  not IsValid(train) or 
+            not train.SubwayTrain or 
+            not train.SubwayTrain.ALS or 
+            not train.SubwayTrain.ALS.HaveAutostop or 
+            not pos or 
+            Metrostroi.TrainDirections[train] == nil or 
+            not Metrostroi.AutostopsForNode or 
+            not Metrostroi.AutostopsForNode[pos.node1] or 
+            not Metrostroi.AutostopsForNode[pos.node1][Metrostroi.TrainDirections[train]] 
+        then continue end
+
         local forws, backs = {}, {}
         for i = 0, 1 do
             for _, autostop in pairs(Metrostroi.AutostopsForNode[pos.node1][Metrostroi.TrainDirections[train]][i == 1] or et) do
@@ -65,17 +94,21 @@ timer.Create("Metrostroi Autostop think", 0.75, 0, function()
         end
         for backautostop in pairs(backs) do
             if train.AutostopsForw and train.AutostopsForw[backautostop] then
-                if (backautostop:GetNW2Bool("Autostop") and backautostop.ASType == 1) or (backautostop.ASType != 1 and (not backautostop.ASMaxSpeed or tonumber(backautostop.ASMaxSpeed) < train.Speed) or nil) then
+                local isRed = true
+                if IsValid(backautostop.Sig) then
+                    isRed = backautostop.Sig.Red
+                end
+
+                if  (isRed and backautostop.ASType == 1) or 
+                    (backautostop.ASType != 1 and (not backautostop.ASMaxSpeed or tonumber(backautostop.ASMaxSpeed) < train.Speed) or nil) 
+                then
                     local nomsg = hook.Run("MetrostroiPassedAutostop", train, backautostop)
                     train.Pneumatic:TriggerInput("Autostop", nomsg and 0 or 1)
                 end
             end
-            
-            --print(backautostop:GetNW2Bool("Autostop"), backautostop.ASMaxSpeed, train.Speed, backautostop.ASType)
         end
         train.AutostopsForw = forws
         train.AutostopsBack = backs
-        --print(forws, backs)
     end
 end)
 function ENT:SendUpdate(ply)

@@ -1,37 +1,8 @@
 include("shared.lua")
-net.Receive("metrostroi-autostop-msa", function()
-    local ent = net.ReadEntity()
-    if not IsValid(ent) then return end
-    local oldType = ent.ASType
-    ent.ASType = net.ReadInt(8)
-    ent.ASSignalLink = net.ReadString()
-    ent.ASMaxSpeed = net.ReadInt(32)
-    if oldType ~= ent.ASType then
-        ent:UpdateModel()
-    end
-end)
-function ENT:Initialize()
-    self.Anims = {}
-    self.ASType = self:GetNW2Int("type")
-    self:UpdateModel()
-end
 
-function ENT:UpdateModel()
-    local data = self.ModelsTable[self.ASType] or self.ModelsTable[1]
-    self.ModelPath = data[1]
-    self.Offset = data[2] or Vector(-78, 0, 1.5)
-
-    if IsValid(self.ClientModel) then self.ClientModel:Remove() end
-    
-    self.ClientModel = ClientsideModel(self.ModelPath, RENDERGROUP_OPAQUE)
-    if IsValid(self.ClientModel) then
-        self.ClientModel:SetPos(self:LocalToWorld(self.Offset))
-        self.ClientModel:SetAngles(self:GetAngles())
-        self.ClientModel:SetParent(self)
-    end
-end
 function ENT:Animate(clientProp, value, min, max, speed, damping, stickyness)
     local id = clientProp
+    if not self.Anims then self.Anims = {} end
     if not self.Anims[id] then
         self.Anims[id] = { val = value, V = 0.0 }
     end
@@ -54,18 +25,40 @@ function ENT:Animate(clientProp, value, min, max, speed, damping, stickyness)
     return min + (max - min) * self.Anims[id].val
 end
 
+function ENT:UpdateModel()
+    local currentType = (self.ASType and self.ASType > 0) and self.ASType or 1
+    local data = self.ModelsTable[currentType] or self.ModelsTable[1]
+    
+    self.ModelPath = data[1]
+    self.Offset = data[2] or Vector(-78, 0, 1.5)
+
+    if IsValid(self.ClientModel) then self.ClientModel:Remove() end
+    
+    self.ClientModel = ClientsideModel(self.ModelPath, RENDERGROUP_OPAQUE)
+    if IsValid(self.ClientModel) then
+        self.ClientModel:SetParent(self)
+        self.ClientModel:SetLocalPos(self.Offset)
+        self.ClientModel:SetLocalAngles(Angle(0, 0, 0))
+    end
+end
+
+function ENT:Initialize()
+    self.Anims = {}
+    net.Start("metrostroi-autostop-msa")
+        net.WriteEntity(self)
+    net.SendToServer()
+end
+
 function ENT:Think()
     local RealTime = RealTime()
     self.DeltaTime = RealTime - (self.PrevTime or RealTime)
     self.PrevTime = RealTime
-
+    
     if not self:GetNoDraw() then self:SetNoDraw(true) end
-
+    
     if IsValid(self.ClientModel) then
         local animVal = self:Animate("Autostop", self:GetNW2Bool("Autostop") and 1 or 0, 0, 1, 0.4, false)
         self.ClientModel:SetPoseParameter("position", animVal)
-        self.ClientModel:SetPos(self:LocalToWorld(self.Offset))
-        self.ClientModel:SetAngles(self:GetAngles())
     end
     
     self:SetNextClientThink(CurTime())
@@ -77,3 +70,17 @@ function ENT:OnRemove()
         self.ClientModel:Remove()
     end
 end
+
+net.Receive("metrostroi-autostop-msa", function()
+    local ent = net.ReadEntity()
+    if not IsValid(ent) then return end
+    
+    local oldType = ent.ASType
+    ent.ASType = net.ReadInt(8)
+    ent.ASSignalLink = net.ReadString()
+    ent.ASMaxSpeed = net.ReadInt(32)
+    
+    if oldType ~= ent.ASType or not IsValid(ent.ClientModel) then
+        ent:UpdateModel()
+    end
+end)
